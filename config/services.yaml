@@ -23,11 +23,8 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-    Bref\Symfony\Messenger\Service\EventBridge\EventBridgeConsumer:
+    Bref\Symfony\Messenger\Service\Sqs\SqsConsumer:
         public: true
-        autowire: true
         arguments:
-            # Pass the transport name used in config/packages/messenger.yaml
             $transportName: 'async'
-            # Optionnally, if you have different buses in config/packages/messenger.yaml, set $bus like below:
-            # $bus: '@event.bus'
+            $partialBatchFailure: false
