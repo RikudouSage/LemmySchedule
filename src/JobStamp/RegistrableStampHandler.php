@@ -27,8 +27,6 @@ final readonly class RegistrableStampHandler implements MiddlewareInterface
                 $delayFor = $delayStamp->getDelay() / 1_000 + 10;
                 $expiresAt = (new DateTimeImmutable())->add(new DateInterval("PT{$delayFor}S"));
             }
-            $existing = $this->jobManager->getJob($registrableStamp->jobId);
-            error_log(gettype($existing));
             if (!$this->jobManager->getJob($registrableStamp->jobId)) {
                 $this->jobManager->registerJob($registrableStamp->jobId, $envelope->getMessage(), $expiresAt);
             }

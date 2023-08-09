@@ -49,6 +49,7 @@ functions:
     web:
         handler: public/index.php
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+        memorySize: 256
         layers:
             - ${bref:layer.php-82-fpm}
         events:
@@ -57,6 +58,7 @@ functions:
     console:
         handler: bin/console
         timeout: 120 # in seconds
+        memorySize: 512
         layers:
             - ${bref:layer.php-82} # PHP
             - ${bref:layer.console} # The "console" layer
