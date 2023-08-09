@@ -74,7 +74,22 @@ functions:
                   arn: !GetAtt Queue.Arn
                   # Only 1 item at a time to simplify error handling
                   batchSize: 1
-
+    worker2:
+        handler: bin/consumer.php
+        timeout: 240 # in seconds
+        reservedConcurrency: 5 # max. 5 messages processed in parallel
+        layers:
+            - ${bref:layer.php-82}
+        events:
+            # Read more at https://www.serverless.com/framework/docs/providers/aws/events/event-bridge/
+            - eventBridge:
+                  # In case of you change bus name in config/packages/messenger.yaml (i.e eventbridge://myapp?event_bus_name=custom-bus) you need to set bus name like below
+                  # eventBus: custom-bus
+                  # This filters events we listen to: only events from the "myapp" source.
+                  # This should be the same source defined in config/packages/messenger.yaml
+                  pattern:
+                      source:
+                          - app
 package:
     patterns:
         # Excluded files and folders for deployment
