@@ -22,7 +22,8 @@ final readonly class LemmyverseInstanceListProvider implements InstanceListProvi
     {
         $result = $this->cache->getItem(self::CACHE_ITEM_NAME)->get();
         assert(is_array($result));
+        $result[] = 'lemmy.world';
 
-        return $result;
+        return array_unique($result);
     }
 }
