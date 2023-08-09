@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\InstanceList\InstanceListProviderCollection;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,8 +14,11 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 final class AuthenticationController extends AbstractController
 {
     #[Route(path: '/login', name: 'auth.login')]
-    public function login(AuthenticationUtils $authenticationUtils, Request $request): Response
-    {
+    public function login(
+        AuthenticationUtils $authenticationUtils,
+        Request $request,
+        InstanceListProviderCollection $instanceListProvider,
+    ): Response {
         if ($this->getUser()) {
             return $this->redirectToRoute('app.home');
         }
@@ -27,6 +31,7 @@ final class AuthenticationController extends AbstractController
             'last_username' => $lastUsername,
             'error' => $error,
             'last_instance' => $lastInstance,
+            'instances' => $instanceListProvider->getInstances(),
         ]);
     }
 

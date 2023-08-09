@@ -9,10 +9,15 @@
                 <h3 class="card-title">{{ "Log in before continuing" | trans }}</h3>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" {{ stimulus_controller('login') }}>
                     <div class="form-group">
                         <label for="inputInstance">{{ "Instance" | trans }}</label>
-                        <input type="text" value="{{ last_instance }}" name="instance" id="inputInstance" class="form-control" required autofocus />
+                        <select id="inputInstance" name="instance" required {{ stimulus_target('login', 'instanceSelect') }}>
+                            <option></option>
+                            {% for instance in instances %}
+                                <option {% if instance is same as last_instance %}selected{% endif %}>{{ instance }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="inputUsername">{{ "Username" | trans }}</label>
