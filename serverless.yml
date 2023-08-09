@@ -22,6 +22,11 @@ provider:
                       - dynamodb:PutItem
                       - dynamodb:UpdateItem
                       - dynamodb:DeleteItem
+                - Effect: Allow
+                  Resource:
+                      - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/default
+                  Action:
+                      - events:PutEvents
     environment:
         # Symfony environment variables
         APP_ENV: ${self:provider.stage}
