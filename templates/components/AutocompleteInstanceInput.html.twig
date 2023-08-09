@@ -1,0 +1,17 @@
+<span {{ attributes }} class="relative autocomplete-component-root">
+    {{ encore_entry_script_tags('autocomplete') }}
+    {{ encore_entry_link_tags('autocomplete') }}
+    <input {% if this.id %}id="{{ this.id }}"{% endif %} type="text" {% if this.required %}required{% endif %} name="{{ this.name }}"
+           data-model="value" data-action="live#action" data-action-name="prevent|debounce(300)|showAutocomplete"
+           class="{{ this.classes }}"/>
+    {% if this.value and this.showAutocomplete %}
+        <div class="autocomplete-block">
+            {% for community in this.filteredCommunities[:10] %}
+                <div class="community-autocomplete-item" data-action="click->live#action"
+                     data-action-name="fillAutocomplete(community={{ community }})">{{ community }}</div>
+            {% else %}
+                {{ "No communities matching your query found." | trans }}
+            {% endfor %}
+        </div>
+    {% endif %}
+</span>

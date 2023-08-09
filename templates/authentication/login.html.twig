@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ "Log in" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">{{ "Log in before continuing" | trans }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="form-group">
+                        <label for="inputInstance">{{ "Instance" | trans }}</label>
+                        <input type="text" value="{{ last_instance }}" name="instance" id="inputInstance" class="form-control" required autofocus />
+                    </div>
+                    <div class="form-group">
+                        <label for="inputUsername">{{ "Username" | trans }}</label>
+                        <input type="text" value="{{ last_username }}" name="username" id="inputUsername" class="form-control" required autocomplete="username" />
+                    </div>
+                    <div class="form-group">
+                        <label for="inputPassword">{{ "Password" | trans }}</label>
+                        <input type="password" name="password" id="inputPassword" class="form-control" required autocomplete="current-password" />
+                    </div>
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                    {% endif %}
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}" />
+
+                    <button class="btn btn-primary" type="submit">
+                        Sign in
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

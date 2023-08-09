@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Service;
+
+use App\JobStamp\CancellableStamp;
+use App\JobStamp\MetadataStamp;
+use App\JobStamp\RegistrableStamp;
+use App\Lemmy\LemmyApiFactory;
+use DateInterval;
+use DateTimeImmutable;
+use DateTimeInterface;
+use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
+use Symfony\Component\Uid\Uuid;
+
+final readonly class JobManager
+{
+    public function __construct(
+        private CacheItemPoolInterface $cache,
+        private CurrentUserService $currentUserService,
+        private MessageBusInterface $messageBus,
+    ) {
+    }
+
+    public function isCancelled(Uuid $jobId): bool
+    {
+        return $this->cache->getItem("cancelled_job_{$jobId}")->isHit();
+    }
+
+    public function cancelJob(Uuid $jobId, ?DateTimeInterface $expiresAt = null): void
+    {
+        $expiresAt ??= (new DateTimeImmutable())->add(new DateInterval('P7D'));
+        $cacheItem = $this->cache->getItem("cancelled_job_{$jobId}");
+        $cacheItem->set(true);
+        $cacheItem->expiresAt($expiresAt);
+        $this->cache->save($cacheItem);
+    }
+
+    public function registerJob(Uuid $jobId, object $message, ?DateTimeInterface $expiresAt = null): void
+    {
+        $expiresAt ??= (new DateTimeImmutable())->add(new DateInterval('P7D'));
+        $cacheKey = "job_{$jobId}";
+        $cacheItem = $this->cache->getItem($cacheKey);
+        if ($cacheItem->isHit()) {
+            return;
+        }
+        $cacheItem->set(new Envelope(message: $message, stamps: [new MetadataStamp([
+            'expiresAt' => $expiresAt,
+            'jobId' => $jobId,
+        ])]));
+        $cacheItem->expiresAt($expiresAt);
+        $this->cache->save($cacheItem);
+
+        $cacheItemList = $this->cache->getItem("job_list_{$this->getUserIdentifier()}");
+        $list = $cacheItemList->isHit() ? $cacheItemList->get() : [];
+        assert(is_array($list));
+        $list[] = $cacheKey;
+        $cacheItemList->set($list);
+        $this->cache->save($cacheItemList);
+    }
+
+    public function getJob(Uuid $jobId): ?Envelope
+    {
+        $cacheKey = "job_{$jobId}";
+        $cacheItemList = $this->cache->getItem("job_list_{$this->getUserIdentifier()}");
+        $list = $cacheItemList->isHit() ? $cacheItemList->get() : [];
+        if (!in_array($cacheKey, $list, true)) {
+            return null;
+        }
+
+        return $this->cache->getItem($cacheKey)->get();
+    }
+
+    /**
+     * @return array<Envelope>
+     */
+    public function listJobs(): array
+    {
+        $cacheItemList = $this->cache->getItem("job_list_{$this->getUserIdentifier()}");
+        $list = $cacheItemList->isHit() ? $cacheItemList->get() : [];
+
+        $result = [];
+        foreach ($list as $cacheKey) {
+            $cacheItem = $this->cache->getItem($cacheKey);
+            if (!$cacheItem->isHit()) {
+                continue;
+            }
+
+            $result[] = $cacheItem->get();
+        }
+
+        return $result;
+    }
+
+    public function createJob(object $message, ?DateTimeInterface $runAt): void
+    {
+        $jobId = Uuid::v4();
+        $stamps = [
+            new CancellableStamp($jobId),
+            new RegistrableStamp($jobId),
+        ];
+        if ($runAt !== null) {
+            $stamps[] = DelayStamp::delayUntil($runAt);
+        }
+
+        $this->messageBus->dispatch($message, $stamps);
+    }
+
+    private function getUserIdentifier(): string
+    {
+        return str_replace('@', '___', $this->currentUserService->getCurrentUser()?->getUserIdentifier() ?? '');
+    }
+}

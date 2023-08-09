@@ -1,0 +1,54 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "Schedule new post" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post') }}>
+                    <div class="form-group">
+                        <label for="inputTitle">{{ "Title" | trans }}</label>
+                        <input id="inputTitle" class="form-control" type="text" name="title"
+                               value="{{ title|default('') }}" required
+                               autofocus/>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputCommunity">{{ "Community" | trans }}</label>
+                        <select id="inputCommunity" name="community" {{ stimulus_target('create-post', 'communitySelect') }}>
+                            <option></option>
+                            {% for communityOption in communities %}
+                                <option {% if community|default('') is same as communityOption %}selected{% endif %}>{{ communityOption }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputUrl">{{ "URL" | trans }}</label>
+                        <input id="inputUrl" class="form-control" type="url" name="url" value="{{ url|default('') }}"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputText">{{ "Text" | trans }}</label>
+                        <textarea id="inputText" class="form-control" name="text">{{ text|default('') }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch custom-switch-on-danger">
+                            <input class="custom-control-input" type="checkbox" id="inputNsfw"
+                                   {% if nsfw|default(false) %}checked{% endif %} />
+                            <label for="inputNsfw" class="custom-control-label">{{ "NSFW?" | trans }}</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputScheduleDateTime">{{ "When do you want to post?" | trans }}</label>
+                        <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
+                               type="datetime-local" required value="{{ scheduleDateTime|default('') }}"/>
+                        <input type="hidden" name="timezoneOffset" {{ stimulus_target('create-post', 'timezoneOffset') }} />
+                    </div>
+
+                    <button class="btn btn-primary" type="submit">
+                        {{ "Schedule" | trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

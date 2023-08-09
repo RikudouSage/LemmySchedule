@@ -1,0 +1,45 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      DOMAIN_NAME: schedule.lemmings.world
+      DOMAIN_ZONE: Z04564103VF7YTIMBHJE4
+      AWS_REGION: eu-central-1
+      APP_ENV: prod
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+      - name: Install serverless
+        run: yarn global add serverless@3
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup php dependencies
+        run: composer install --no-dev --no-scripts
+      - name: Setup js dependencies
+        run: yarn install
+      - name: Build assets
+        run: yarn build
+      - name: Prepare cache
+        run: ./bin/console cache:warmup --env=prod
+      - name: Deploy infrastructure
+        run: serverless deploy --stage prod --verbose --region $AWS_REGION
+      - name: Deploy assets
+        run: |
+          export ASSETS_BUCKET=$(aws cloudformation describe-stacks --stack-name LemmySchedule-prod --query "Stacks[0].Outputs[?OutputKey=='AssetsBucket'].OutputValue" --output=text --region $AWS_REGION)
+          aws s3 sync public/build s3://$ASSETS_BUCKET/build --delete
+      - name: Clear CDN cache
+        run: |
+          export CDN_ID=$(aws cloudformation describe-stacks --stack-name LemmySchedule-prod --query "Stacks[0].Outputs[?OutputKey=='Cdn'].OutputValue" --output=text --region $AWS_REGION)
+          aws cloudfront create-invalidation --distribution-id $CDN_ID --paths "/*" 2>&1 > /dev/null

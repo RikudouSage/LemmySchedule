@@ -1,3 +1,4 @@
+/.idea
 
 ###> symfony/framework-bundle ###
 /.env.local
@@ -8,3 +9,14 @@
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
+
+###> symfony/webpack-encore-bundle ###
+/node_modules/
+/public/build/
+npm-debug.log
+yarn-error.log
+###< symfony/webpack-encore-bundle ###
+
+###> bref/symfony-bridge ###
+/.serverless/
+###< bref/symfony-bridge ###
