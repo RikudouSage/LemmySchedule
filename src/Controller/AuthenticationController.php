@@ -13,6 +13,11 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 #[Route('/auth')]
 final class AuthenticationController extends AbstractController
 {
+    public function __construct(
+        private readonly string $defaultInstance,
+    ) {
+    }
+
     #[Route(path: '/login', name: 'auth.login')]
     public function login(
         AuthenticationUtils $authenticationUtils,
@@ -25,7 +30,7 @@ final class AuthenticationController extends AbstractController
 
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
-        $lastInstance = $request->getSession()->get('last_instance', 'lemmings.world');
+        $lastInstance = $request->getSession()->get('last_instance', $this->defaultInstance);
 
         return $this->render('authentication/login.html.twig', [
             'last_username' => $lastUsername,

@@ -22,6 +22,7 @@ final readonly class RefreshInstanceListHandler
         private CacheItemPoolInterface $cache,
         private HttpClientInterface $httpClient,
         private MessageBusInterface $messageBus,
+        private string $defaultInstance,
     ) {
     }
 
@@ -37,10 +38,10 @@ final readonly class RefreshInstanceListHandler
         );
         assert(is_array($json));
         usort($json, static function (array $a, array $b) {
-            if ($a['base'] === 'lemmings.world') {
+            if ($a['base'] === $this->defaultInstance) {
                 return -1;
             }
-            if ($b['base'] === 'lemmings.world') {
+            if ($b['base'] === $this->defaultInstance) {
                 return 1;
             }
 

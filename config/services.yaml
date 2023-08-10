@@ -4,6 +4,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.default_instance: '%env(DEFAULT_INSTANCE)%'
 
 services:
     # default configuration for services in *this* file
@@ -19,6 +20,8 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+        bind:
+            string $defaultInstance: '%app.default_instance%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
