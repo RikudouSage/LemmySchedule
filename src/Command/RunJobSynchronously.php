@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use App\JobStamp\RegistrableStamp;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -44,7 +45,7 @@ final class RunJobSynchronously extends Command
         if (!is_array($job) || !isset($job['body'])) {
             throw new RuntimeException('Invalid job - must be an array with a body key');
         }
-        $job = $this->serializer->decode($job);
+        $job = $this->serializer->decode($job)->withoutStampsOfType(RegistrableStamp::class);
         $this->messageBus->dispatch($job, [
             new TransportNamesStamp(['sync']),
         ]);
