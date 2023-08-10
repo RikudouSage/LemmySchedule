@@ -13,12 +13,6 @@ provider:
             statements:
                 - Effect: Allow
                   Resource:
-                      - !GetAtt Queue.Arn
-                      - !GetAtt DeadLetterQueue.Arn
-                  Action:
-                      - sqs:*
-                - Effect: Allow
-                  Resource:
                       - !GetAtt CacheTable.Arn
                   Action:
                       - dynamodb:DescribeTable
@@ -33,7 +27,8 @@ provider:
         APP_ENV: ${self:provider.stage}
         APP_SECRET: !Join [ '', [ '{{resolve:secretsmanager:', !Ref AppSecret, ':SecretString:secret}}' ] ]
         DYNAMODB_CACHE_TABLE: !Ref CacheTable
-        MESSENGER_TRANSPORT_DSN: !Join ['', [!Ref Queue, '?auto_setup=false']]
+        MESSENGER_TRANSPORT_DSN: eb://LemmySchedule
+        ROLE_ARN: !GetAtt EventBridgeRole.Arn
 
 plugins:
   - ./vendor/bref/bref
@@ -50,6 +45,8 @@ functions:
         handler: public/index.php
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
         memorySize: 256
+        environment:
+            CONSOLE_FUNCTION: !GetAtt ConsoleLambdaFunction.Arn
         layers:
             - ${bref:layer.php-82-fpm}
         events:
@@ -62,18 +59,6 @@ functions:
         layers:
             - ${bref:layer.php-82} # PHP
             - ${bref:layer.console} # The "console" layer
-    worker:
-        handler: bin/consumer.php
-        timeout: 240 # in seconds
-        reservedConcurrency: 5 # max. 5 messages processed in parallel
-        layers:
-            - ${bref:layer.php-82}
-        events:
-            # Read more at https://www.serverless.com/framework/docs/providers/aws/events/sqs/
-            - sqs:
-                  arn: !GetAtt Queue.Arn
-                  # Only 1 item at a time to simplify error handling
-                  batchSize: 1
 
 package:
     patterns:
@@ -116,17 +101,6 @@ resources:
                 KeySchema:
                     - AttributeName: id
                       KeyType: HASH
-        Queue:
-            Type: AWS::SQS::Queue
-            Properties:
-                VisibilityTimeout: 1440
-                RedrivePolicy:
-                    deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
-                    maxReceiveCount: 5
-        DeadLetterQueue:
-            Type: AWS::SQS::Queue
-            Properties:
-                MessageRetentionPeriod: 1209600
         Certificate:
             Type: Custom::Certificate
             Properties:
@@ -278,6 +252,17 @@ resources:
                         AcmCertificateArn: !Ref AssetsCertificate
                         MinimumProtocolVersion: TLSv1.2_2019
                         SslSupportMethod: sni-only
+        EventBridgeRole:
+            Type: AWS::IAM::Role
+            Properties:
+                AssumeRolePolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Effect: Allow
+                          Principal:
+                              Service: scheduler.amazonaws.com
+                          Action:
+                              - sts:AssumeRole
     Outputs:
         TestUrl:
             Value: https://${self:custom.Domain}

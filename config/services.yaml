@@ -23,8 +23,9 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-    Bref\Symfony\Messenger\Service\Sqs\SqsConsumer:
-        public: true
+    AsyncAws\Scheduler\SchedulerClient:
+
+    App\JobTransport\EventBridgeTransportFactory:
         arguments:
-            $transportName: 'async'
-            $partialBatchFailure: false
+            $consoleFunctionArn: '%env(CONSOLE_ARN)%'
+            $roleArn: '%env(ROLE_ARN)%'

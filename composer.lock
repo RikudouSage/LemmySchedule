@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9171b4dcd2c31b67701e9226129b7902",
+    "content-hash": "ba084ae8f2c5df3980fe3149e1f8f034",
     "packages": [
         {
             "name": "async-aws/core",
@@ -180,6 +180,65 @@
             ],
             "support": {
                 "source": "https://github.com/async-aws/event-bridge/tree/1.5.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/jderusse",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nyholm",
+                    "type": "github"
+                }
+            ],
+            "time": "2023-08-07T20:00:50+00:00"
+        },
+        {
+            "name": "async-aws/scheduler",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/async-aws/scheduler.git",
+                "reference": "092966afe2b29b8abd04f03c047fdab4e9cf6739"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/async-aws/scheduler/zipball/092966afe2b29b8abd04f03c047fdab4e9cf6739",
+                "reference": "092966afe2b29b8abd04f03c047fdab4e9cf6739",
+                "shasum": ""
+            },
+            "require": {
+                "async-aws/core": "^1.9",
+                "ext-filter": "*",
+                "ext-json": "*",
+                "php": "^7.2.5 || ^8.0",
+                "symfony/polyfill-uuid": "^1.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.1-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "AsyncAws\\Scheduler\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Scheduler client, part of the AWS SDK provided by AsyncAws.",
+            "keywords": [
+                "amazon",
+                "async-aws",
+                "aws",
+                "scheduler",
+                "sdk"
+            ],
+            "support": {
+                "source": "https://github.com/async-aws/scheduler/tree/1.1.0"
             },
             "funding": [
                 {

@@ -7,6 +7,7 @@
         "php": "^8.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "async-aws/scheduler": "^1.1",
         "bref/bref": "^2.1",
         "bref/symfony-bridge": "^0.2.2",
         "bref/symfony-messenger": "^0.5.4",
