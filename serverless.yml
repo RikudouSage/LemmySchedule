@@ -22,6 +22,11 @@ provider:
                       - dynamodb:PutItem
                       - dynamodb:UpdateItem
                       - dynamodb:DeleteItem
+                - Effect: Allow
+                  Resource:
+                      - !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/default/LemmySchedule_Job_*
+                  Action:
+                      - scheduler:CreateSchedule
     environment:
         # Symfony environment variables
         APP_ENV: ${self:provider.stage}
