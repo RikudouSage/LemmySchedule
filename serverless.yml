@@ -27,6 +27,11 @@ provider:
                       - !Sub arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/default/LemmySchedule_Job_*
                   Action:
                       - scheduler:CreateSchedule
+                - Effect: Allow
+                  Action:
+                      - iam:PassRole
+                  Resource:
+                      - !GetAtt EventBridgeRole.Arn
     environment:
         # Symfony environment variables
         APP_ENV: ${self:provider.stage}
