@@ -35,6 +35,10 @@
                         <td>{{ job.nsfw ? 'Yes' | trans : 'No' | trans }}</td>
                     </tr>
                     <tr>
+                        <td><strong>{{ "Pin to community" | trans }}</strong></td>
+                        <td>{{ job.pinToCommunity ? 'Yes' | trans : 'No' | trans }}</td>
+                    </tr>
+                    <tr>
                         <td><strong>{{ "Text" | trans }}</strong></td>
                         <td class="text-wrap">
                             {% if job.text is null %}

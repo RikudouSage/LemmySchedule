@@ -32,9 +32,17 @@
                     </div>
                     <div class="form-group">
                         <div class="custom-control custom-switch custom-switch-on-danger">
-                            <input class="custom-control-input" type="checkbox" id="inputNsfw"
+                            <input class="custom-control-input" type="checkbox" id="inputNsfw" name="nsfw"
                                    {% if nsfw|default(false) %}checked{% endif %} />
                             <label for="inputNsfw" class="custom-control-label">{{ "NSFW?" | trans }}</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input class="custom-control-input" type="checkbox" id="inputPinToCommunity" name="pinToCommunity"
+                                   {% if pinToCommunity|default(false) %}checked{% endif %} />
+                            <label for="inputPinToCommunity" class="custom-control-label">{{ "Pin to community" | trans }}</label>
+                            <small>({{ "note that you must be a mod for this to work" | trans }})</small>
                         </div>
                     </div>
                     <div class="form-group">

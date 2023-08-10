@@ -16,6 +16,19 @@ final readonly class CreatePostJob
         public ?string $text = null,
         public Language $language = Language::Undetermined,
         public ?bool $nsfw = null,
+        public bool $pinToCommunity = false,
     ) {
+    }
+
+    /**
+     * For adding properties to already serialized objects
+     */
+    public function __unserialize(array $data): void
+    {
+        $data['pinToCommunity'] ??= false;
+
+        foreach ($data as $property => $value) {
+            $this->{$property} = $value;
+        }
     }
 }

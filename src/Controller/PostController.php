@@ -81,6 +81,7 @@ final class PostController extends AbstractController
             'title' => $message->title,
             'community' => sprintf('!%s@%s', $message->community->name, parse_url($message->community->actorId, PHP_URL_HOST)),
             'nsfw' => $message->nsfw,
+            'pinToCommunity' => $message->pinToCommunity,
         ];
 
         return $this->render('post/detail.html.twig', [
@@ -116,6 +117,7 @@ final class PostController extends AbstractController
             'nsfw' => $request->request->getBoolean('nsfw'),
             'scheduleDateTime' => $request->request->get('scheduleDateTime'),
             'timezoneOffset' => $request->request->get('timezoneOffset'),
+            'pinToCommunity' => $request->request->getBoolean('pinToCommunity'),
         ];
 
         $errorResponse = fn () => $this->render('post/create.html.twig', [
@@ -167,6 +169,7 @@ final class PostController extends AbstractController
                     url: $data['url'] ?: null,
                     text: $data['text'] ?: null,
                     nsfw: $data['nsfw'],
+                    pinToCommunity: $data['pinToCommunity'],
                 ),
                 $dateTime,
             );
