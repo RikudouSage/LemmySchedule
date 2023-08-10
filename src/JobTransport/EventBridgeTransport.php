@@ -64,6 +64,10 @@ final readonly class EventBridgeTransport implements TransportInterface
             serialize($encoded) ?: throw new LogicException('Serialization failed'),
         ) ?: throw new LogicException('Failed base64 encoding');
 
+        error_log(json_encode($_ENV));
+        error_log(getenv('CONSOLE_ARN') ?: 'false');
+        error_log(getenv('ROLE_ARN') ?: 'false');
+
         $this->schedulerClient->createSchedule(new CreateScheduleInput([
             'ActionAfterCompletion' => ActionAfterCompletion::DELETE,
             'FlexibleTimeWindow' => new FlexibleTimeWindow([
