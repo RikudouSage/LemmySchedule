@@ -39,6 +39,10 @@
                         <td>{{ job.pinToCommunity ? 'Yes' | trans : 'No' | trans }}</td>
                     </tr>
                     <tr>
+                        <td><strong>{{ "Language" | trans }}</strong></td>
+                        <td>{{ job.language.name }}</td>
+                    </tr>
+                    <tr>
                         <td><strong>{{ "Text" | trans }}</strong></td>
                         <td class="text-wrap">
                             {% if job.text is null %}

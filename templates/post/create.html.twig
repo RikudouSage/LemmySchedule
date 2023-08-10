@@ -15,7 +15,8 @@
                     </div>
                     <div class="form-group">
                         <label for="inputCommunities">{{ "Communities" | trans }}</label>
-                        <select multiple id="inputCommunities" name="communities[]" {{ stimulus_target('create-post', 'communitySelect') }}>
+                        <select multiple id="inputCommunities"
+                                name="communities[]" {{ stimulus_target('create-post', 'communitySelect') }}>
                             <option></option>
                             {% for communityOption in communities %}
                                 <option {% if communityOption in selectedCommunities %}selected{% endif %}>{{ communityOption }}</option>
@@ -25,6 +26,18 @@
                     <div class="form-group">
                         <label for="inputUrl">{{ "URL" | trans }}</label>
                         <input id="inputUrl" class="form-control" type="url" name="url" value="{{ url|default('') }}"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputLanguage">{{ "Language" | trans }}</label>
+                        <select id="inputLanguage"
+                                name="language" {{ stimulus_target('create-post', 'languageSelect') }}>
+                            {% for language in languages %}
+                                <option value="{{ language.value }}"
+                                        {% if language.value is same as selectedLanguage.value %}selected{% endif %}>
+                                    {{ language.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="inputText">{{ "Text" | trans }}</label>
@@ -39,9 +52,11 @@
                     </div>
                     <div class="form-group">
                         <div class="custom-control custom-switch">
-                            <input class="custom-control-input" type="checkbox" id="inputPinToCommunity" name="pinToCommunity"
+                            <input class="custom-control-input" type="checkbox" id="inputPinToCommunity"
+                                   name="pinToCommunity"
                                    {% if pinToCommunity|default(false) %}checked{% endif %} />
-                            <label for="inputPinToCommunity" class="custom-control-label">{{ "Pin to community" | trans }}</label>
+                            <label for="inputPinToCommunity"
+                                   class="custom-control-label">{{ "Pin to community" | trans }}</label>
                             <small>({{ "note that you must be a mod for this to work" | trans }})</small>
                         </div>
                     </div>
@@ -49,7 +64,8 @@
                         <label for="inputScheduleDateTime">{{ "When do you want to post?" | trans }}</label>
                         <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
                                type="datetime-local" required value="{{ scheduleDateTime|default('') }}"/>
-                        <input type="hidden" name="timezoneOffset" {{ stimulus_target('create-post', 'timezoneOffset') }} />
+                        <input type="hidden"
+                               name="timezoneOffset" {{ stimulus_target('create-post', 'timezoneOffset') }} />
                     </div>
 
                     <button class="btn btn-primary" type="submit">

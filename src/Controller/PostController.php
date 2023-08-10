@@ -13,6 +13,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
+use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -117,6 +118,7 @@ final class PostController extends AbstractController
             'community' => sprintf('!%s@%s', $message->community->name, parse_url($message->community->actorId, PHP_URL_HOST)),
             'nsfw' => $message->nsfw,
             'pinToCommunity' => $message->pinToCommunity,
+            'language' => $message->language,
         ];
 
         return $this->render('post/detail.html.twig', [
@@ -130,6 +132,8 @@ final class PostController extends AbstractController
         return $this->render('post/create.html.twig', [
             'communities' => $this->getCommunities(),
             'selectedCommunities' => [],
+            'languages' => Language::cases(),
+            'selectedLanguage' => Language::Undetermined,
         ]);
     }
 
@@ -153,6 +157,7 @@ final class PostController extends AbstractController
             'scheduleDateTime' => $request->request->get('scheduleDateTime'),
             'timezoneOffset' => $request->request->get('timezoneOffset'),
             'pinToCommunity' => $request->request->getBoolean('pinToCommunity'),
+            'selectedLanguage' => Language::tryFrom($request->request->getInt('language')) ?? Language::Undetermined,
         ];
 
         $errorResponse = fn () => $this->render('post/create.html.twig', [
@@ -197,12 +202,13 @@ final class PostController extends AbstractController
         foreach ($communities as $community) {
             $jobManager->createJob(
                 new CreatePostJob(
-                    jwt:$user->getJwt(),
+                    jwt: $user->getJwt(),
                     instance: $user->getInstance(),
                     community: $community,
                     title: $data['title'],
                     url: $data['url'] ?: null,
                     text: $data['text'] ?: null,
+                    language: $data['selectedLanguage'],
                     nsfw: $data['nsfw'],
                     pinToCommunity: $data['pinToCommunity'],
                 ),
