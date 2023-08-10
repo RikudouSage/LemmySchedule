@@ -16,6 +16,7 @@ use AsyncAws\Scheduler\ValueObject\RetryPolicy;
 use AsyncAws\Scheduler\ValueObject\Target;
 use DateInterval;
 use DateTimeImmutable;
+use LogicException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
@@ -27,8 +28,6 @@ final readonly class EventBridgeTransport implements TransportInterface
 {
     public function __construct(
         private string $prefix,
-        private string $consoleFunctionArn,
-        private string $roleArn,
         private SerializerInterface $serializer,
         private SchedulerClient $schedulerClient,
     ) {
@@ -36,17 +35,17 @@ final readonly class EventBridgeTransport implements TransportInterface
 
     public function get(): iterable
     {
-        // TODO: Implement get() method.
+        throw new LogicException('This transport is used only for sending messages.');
     }
 
     public function ack(Envelope $envelope): void
     {
-        // TODO: Implement ack() method.
+        throw new LogicException('This transport is used only for sending messages.');
     }
 
     public function reject(Envelope $envelope): void
     {
-        // TODO: Implement reject() method.
+        throw new LogicException('This transport is used only for sending messages.');
     }
 
     public function send(Envelope $envelope): Envelope
@@ -71,8 +70,8 @@ final readonly class EventBridgeTransport implements TransportInterface
             'ScheduleExpressionTimezone' => $runAt->getTimezone()->getName(),
             'State' => ScheduleState::ENABLED,
             'Target' => new Target([
-                'Arn' => $this->consoleFunctionArn,
-                'RoleArn' => $this->roleArn,
+                'Arn' => getenv('CONSOLE_ARN'),
+                'RoleArn' => getenv('ROLE_ARN'),
                 'Input' => '"app:run-sync ' . base64_encode(json_encode($encoded, flags: JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '"',
                 'RetryPolicy' => new RetryPolicy([
                     'MaximumEventAgeInSeconds' => 86_400,

@@ -14,8 +14,6 @@ final readonly class EventBridgeTransportFactory implements TransportFactoryInte
 {
     public function __construct(
         private SchedulerClient $schedulerClient,
-        private string $consoleFunctionArn,
-        private string $roleArn,
     ) {
     }
 
@@ -23,8 +21,6 @@ final readonly class EventBridgeTransportFactory implements TransportFactoryInte
     {
         return new EventBridgeTransport(
             prefix: $this->getPrefix($dsn),
-            consoleFunctionArn: $this->consoleFunctionArn,
-            roleArn: $this->roleArn,
             serializer: $serializer,
             schedulerClient: $this->schedulerClient,
         );

@@ -24,8 +24,3 @@ services:
     # please note that last definitions always *replace* previous ones
 
     AsyncAws\Scheduler\SchedulerClient:
-
-    App\JobTransport\EventBridgeTransportFactory:
-        arguments:
-            $consoleFunctionArn: '%env(CONSOLE_ARN)%'
-            $roleArn: '%env(ROLE_ARN)%'
