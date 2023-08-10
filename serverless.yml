@@ -273,6 +273,7 @@ resources:
                                     - lambda:InvokeFunction
                                 Resource:
                                     - !GetAtt ConsoleLambdaFunction.Arn
+                                    - !Join [':', [!GetAtt ConsoleLambdaFunction.Arn, '*']]
     Outputs:
         TestUrl:
             Value: https://${self:custom.Domain}
