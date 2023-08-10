@@ -73,7 +73,7 @@ final readonly class EventBridgeTransport implements TransportInterface
             'Target' => new Target([
                 'Arn' => $this->consoleFunctionArn,
                 'RoleArn' => $this->roleArn,
-                'Input' => json_encode($encoded, flags: JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                'Input' => '"app:run-sync ' . base64_encode(json_encode($encoded, flags: JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '"',
                 'RetryPolicy' => new RetryPolicy([
                     'MaximumEventAgeInSeconds' => 86_400,
                     'MaximumRetryAttempts' => 5,

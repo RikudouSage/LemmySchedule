@@ -28,7 +28,6 @@ provider:
         APP_SECRET: !Join [ '', [ '{{resolve:secretsmanager:', !Ref AppSecret, ':SecretString:secret}}' ] ]
         DYNAMODB_CACHE_TABLE: !Ref CacheTable
         MESSENGER_TRANSPORT_DSN: eb://LemmySchedule
-        ROLE_ARN: !GetAtt EventBridgeRole.Arn
 
 plugins:
   - ./vendor/bref/bref
@@ -47,6 +46,7 @@ functions:
         memorySize: 256
         environment:
             CONSOLE_FUNCTION: !GetAtt ConsoleLambdaFunction.Arn
+            ROLE_ARN: !GetAtt EventBridgeRole.Arn
         layers:
             - ${bref:layer.php-82-fpm}
         events:
@@ -263,6 +263,16 @@ resources:
                               Service: scheduler.amazonaws.com
                           Action:
                               - sts:AssumeRole
+                Policies:
+                    - PolicyName: ExecuteLambda
+                      PolicyDocument:
+                          Version: '2012-10-17'
+                          Statement:
+                              - Effect: Allow
+                                Action:
+                                    - lambda:InvokeFunction
+                                Resource:
+                                    - !GetAtt ConsoleLambdaFunction.Arn
     Outputs:
         TestUrl:
             Value: https://${self:custom.Domain}
