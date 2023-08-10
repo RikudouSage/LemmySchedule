@@ -31,7 +31,7 @@ provider:
                   Action:
                       - iam:PassRole
                   Resource:
-                      - !GetAtt EventBridgeRole.Arn
+                      - !Sub arn:aws:iam::${AWS::AccountId}:role/${self:service}-${self:provider.stage}-EventBridgeRole-*
     environment:
         # Symfony environment variables
         APP_ENV: ${self:provider.stage}
