@@ -1,0 +1,7 @@
+<div class="alert alert-danger alert-dismissible" {{ stimulus_controller('notification-message') }}>
+    <button type="button" class="close" data-dismiss="alert"
+            aria-hidden="true" {{ stimulus_action('notification-message', 'dismiss') }}>×
+    </button>
+    <h5><i class="icon fas fa-ban"></i> {{ "Error" | trans }}</h5>
+    {{ message }}
+</div>

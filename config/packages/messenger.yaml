@@ -14,6 +14,7 @@ framework:
             App\Job\RefreshInstanceListJob: async
             App\Job\CreatePostJob: async
             App\Job\FetchCommunitiesJob: async
+            App\Job\PinUnpinPostJob: async
 
         buses:
             messenger.bus.default:

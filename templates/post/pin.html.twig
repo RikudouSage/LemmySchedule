@@ -1,0 +1,86 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "Pin/unpin a post" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <p>
+                    {{ "Note: This only works if you're a mod of the community you're pinning the post in." | trans }}
+                </p>
+                <form method="post" action="{{ path('app.post.pin.do') }}" {{ stimulus_controller('create-post-pin', {
+                    fetchPostUrl: path('app.post.ajax.fetch'),
+                    emptyInputError: 'You must provide the post ID or URL.' | trans,
+                    badRequestError: 'The parameters you provided are not valid.' | trans,
+                    convertingUrlToIdError: 'There was an error while converting the URL to a post ID, please provide the post ID manually.' | trans,
+                    notFoundError: "We couldn't find the post, are you sure it exists?" | trans,
+                    genericError: "There was an error." | trans,
+                    yes: "Yes" | trans,
+                    no: "No" | trans,
+                }) }}>
+                    <div {{ stimulus_target('create-post-pin', 'messageHolder') }}></div>
+                    <div class="form-group">
+                        <label for="inputUrlId">{{ "URL or post ID" | trans }}</label>
+                        <input id="inputUrlId" class="form-control" type="text" name="urlOrId" required
+                               autofocus {{ stimulus_target('create-post-pin', 'postIdInput') }} />
+                    </div>
+                    <button type="button" class="btn btn-primary" {{ stimulus_action('create-post-pin', 'loadPost') }}>
+                        {{ "Load" | trans }}
+                    </button>
+
+                    <table class="hidden table table-bordered" {{ stimulus_target('create-post-pin', 'detailsTable') }}>
+                        <tr>
+                            <td><strong>{{ "Title" | trans }}</strong></td>
+                            <td {{ stimulus_target('create-post-pin', 'titleCell') }}></td>
+                        </tr>
+                        <tr>
+                            <td><strong>{{ "URL" | trans }}</strong></td>
+                            <td {{ stimulus_target('create-post-pin', 'urlCell') }}></td>
+                        </tr>
+                        <tr>
+                            <td><strong>{{ "Text" | trans }}</strong></td>
+                            <td {{ stimulus_target('create-post-pin', 'textCell') }}></td>
+                        </tr>
+                        <tr>
+                            <td><strong>{{ "Pinned" | trans }}</strong></td>
+                            <td {{ stimulus_target('create-post-pin', 'pinnedCell') }}></td>
+                        </tr>
+                        <tr>
+                            <td><strong>{{ "Community" | trans }}</strong></td>
+                            <td {{ stimulus_target('create-post-pin', 'communityCell') }}></td>
+                        </tr>
+                    </table>
+
+                    <div class="hidden" {{ stimulus_target('create-post-pin', 'restOfTheForm') }}>
+                        <h3>{{ "Do you want to pin or unpin the post?" | trans }}</h3>
+                        <div class="form-group">
+                            <div class="custom-control custom-radio">
+                                <input {{ stimulus_target('create-post-pin', 'pinRadio') }}
+                                        class="custom-control-input custom-control-input-success" type="radio" id="inputPin"
+                                        name="pin" value="1">
+                                <label for="inputPin" class="custom-control-label">{{ "Pin" | trans }}</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input {{ stimulus_target('create-post-pin', 'unpinRadio') }}
+                                        class="custom-control-input custom-control-input-danger" type="radio"
+                                        id="inputUnpin"
+                                        name="pin" value="0">
+                                <label for="inputUnpin" class="custom-control-label">{{ "Unpin" | trans }}</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputScheduleDateTime">{{ "When do you want to pin/unpin?" | trans }}</label>
+                            <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
+                                   type="datetime-local" required value="{{ scheduleDateTime|default('') }}"/>
+                            <input type="hidden" name="timezoneOffset" {{ stimulus_target('create-post-pin', 'timezoneOffset') }} />
+                        </div>
+
+                        <button class="btn btn-primary" type="submit">{{ "Schedule pin/unpin" | trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
