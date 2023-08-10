@@ -29,9 +29,6 @@
                 <li class="nav-item d-none d-sm-inline-block">
                     <a href="{{ path('app.post.list') }}" class="nav-link">{{ "Home" | trans }}</a>
                 </li>
-                <li class="nav-item d-none d-sm-inline-block">
-                    <a href="{{ path('app.post.create') }}" class="nav-link">{{ "Schedule a post" | trans }}</a>
-                </li>
             {% endif %}
         </ul>
     </nav>
@@ -66,6 +63,14 @@
                     <!-- Add icons to the links using the .nav-icon class
                          with font-awesome or any other icon font library -->
                     {% if app.user %}
+                        <li class="nav-item">
+                            <a href="{{ path('app.post.create') }}" class="nav-link">
+                                <i class="nav-icon fas fa-map-signs"></i>
+                                <p>
+                                    {{ "Schedule a post" | trans }}
+                                </p>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a href="{{ path('auth.logout') }}" class="nav-link">
                                 <i class="nav-icon fas fa-sign-out-alt"></i>
