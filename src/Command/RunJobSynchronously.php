@@ -40,7 +40,7 @@ final class RunJobSynchronously extends Command
         if (!is_string($job)) {
             throw new RuntimeException('Failed base64 decoding the job');
         }
-        $job = json_decode($job, true);
+        $job = unserialize($job);
         if (!is_array($job) || !isset($job['body'])) {
             throw new RuntimeException('Invalid job - must be an array with a body key');
         }

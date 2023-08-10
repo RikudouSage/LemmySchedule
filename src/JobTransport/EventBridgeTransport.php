@@ -60,6 +60,10 @@ final readonly class EventBridgeTransport implements TransportInterface
             $runAt = $runAt->add(new DateInterval("PT{$delay}S"));
         }
 
+        $encoded = base64_encode(
+            serialize($encoded) ?: throw new LogicException('Serialization failed'),
+        ) ?: throw new LogicException('Failed base64 encoding');
+
         $this->schedulerClient->createSchedule(new CreateScheduleInput([
             'ActionAfterCompletion' => ActionAfterCompletion::DELETE,
             'FlexibleTimeWindow' => new FlexibleTimeWindow([
@@ -72,7 +76,7 @@ final readonly class EventBridgeTransport implements TransportInterface
             'Target' => new Target([
                 'Arn' => getenv('CONSOLE_ARN'),
                 'RoleArn' => getenv('ROLE_ARN'),
-                'Input' => '"app:run-sync ' . base64_encode(json_encode($encoded, flags: JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) . '"',
+                'Input' => '"app:run-sync ' . $encoded . '"',
                 'RetryPolicy' => new RetryPolicy([
                     'MaximumEventAgeInSeconds' => 86_400,
                     'MaximumRetryAttempts' => 5,
