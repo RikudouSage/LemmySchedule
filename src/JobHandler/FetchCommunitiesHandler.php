@@ -27,7 +27,7 @@ final readonly class FetchCommunitiesHandler
         $api = $this->apiFactory->get(instance: $job->instance, jwt: $job->jwt);
         $communities = $this->getCommunities($api);
         $communities = array_map(
-            fn (CommunityView $community) => '!' . $community->community->name . '@' . parse_url($community->community->actorId, PHP_URL_HOST),
+            static fn (CommunityView $community) => '!' . $community->community->name . '@' . parse_url($community->community->actorId, PHP_URL_HOST),
             [...$communities],
         );
 

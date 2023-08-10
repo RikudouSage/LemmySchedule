@@ -3,7 +3,6 @@
 namespace App\JobStamp;
 
 use App\Service\JobManager;
-use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Middleware\MiddlewareInterface;
 use Symfony\Component\Messenger\Middleware\StackInterface;

@@ -30,7 +30,7 @@ final readonly class LemmyApiFactory
 
         if ($username && $password) {
             $api->login($username, $password);
-        } else if ($jwt) {
+        } elseif ($jwt) {
             $api->setJwt($jwt);
         } else {
             throw new LogicException('Either username/password or jwt must be provided.');
@@ -42,6 +42,7 @@ final readonly class LemmyApiFactory
     public function getForCurrentUser(): LemmyApi
     {
         $user = $this->currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
+
         return $this->get($user->getInstance(), $user->getUsername(), jwt: $user->getJwt());
     }
 }

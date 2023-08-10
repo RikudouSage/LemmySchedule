@@ -2,8 +2,6 @@
 
 namespace App\JobTransport;
 
-use AsyncAws\DynamoDb\DynamoDbClient;
-use AsyncAws\EventBridge\EventBridgeClient;
 use AsyncAws\Scheduler\SchedulerClient;
 use LogicException;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;

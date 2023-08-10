@@ -36,16 +36,17 @@ final readonly class RefreshInstanceListHandler
             flags: JSON_THROW_ON_ERROR,
         );
         assert(is_array($json));
-        usort($json, function (array $a, array $b) {
+        usort($json, static function (array $a, array $b) {
             if ($a['base'] === 'lemmings.world') {
                 return -1;
             }
             if ($b['base'] === 'lemmings.world') {
                 return 1;
             }
+
             return $b['score'] <=> $a['score'];
         });
-        $instanceNames = array_map(fn (array $instance) => $instance['base'], $json);
+        $instanceNames = array_map(static fn (array $instance) => $instance['base'], $json);
 
         $cacheItem->set($instanceNames);
         $this->cache->save($cacheItem);

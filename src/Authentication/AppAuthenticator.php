@@ -9,7 +9,6 @@ use App\Lemmy\LemmyApiFactory;
 use App\Service\CookieSetter;
 use DateTimeImmutable;
 use Rikudou\LemmyApi\Exception\IncorrectPasswordException;
-use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Exception\UserNotFoundException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -22,14 +21,13 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\CsrfTokenBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
-use Symfony\Component\Security\Http\Authenticator\Passport\Credentials\PasswordCredentials;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use DateInterval;
 
 final class AppAuthenticator extends AbstractLoginFormAuthenticator
 {
@@ -51,7 +49,7 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         $password = $request->request->get('password');
 
         if (!$instance || !$username || !$password) {
-            throw new CustomUserMessageAuthenticationException($this->translator->trans("All fields must be filled."));
+            throw new CustomUserMessageAuthenticationException($this->translator->trans('All fields must be filled.'));
         }
 
         try {
@@ -68,7 +66,7 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         $cookie = Cookie::create(
             name: UserProvider::COOKIE_NAME,
             value: json_encode($cookieValue),
-            expire: (new DateTimeImmutable())->add(new \DateInterval('P7D')),
+            expire: (new DateTimeImmutable())->add(new DateInterval('P7D')),
         );
         $this->cookieSetter->setCookie($cookie);
 
@@ -82,7 +80,7 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         ]);
 
         return new SelfValidatingPassport(
-            new UserBadge("{$username}@{$instance}", fn () => new User($username, $instance, $api->getJwt())),
+            new UserBadge("{$username}@{$instance}", static fn () => new User($username, $instance, $api->getJwt())),
             [
                 new CsrfTokenBadge('authenticate', $request->request->get('_csrf_token')),
             ]

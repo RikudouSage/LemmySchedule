@@ -5,7 +5,6 @@ namespace App\Service;
 use App\JobStamp\CancellableStamp;
 use App\JobStamp\MetadataStamp;
 use App\JobStamp\RegistrableStamp;
-use App\Lemmy\LemmyApiFactory;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;

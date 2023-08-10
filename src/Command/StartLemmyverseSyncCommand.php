@@ -3,15 +3,12 @@
 namespace App\Command;
 
 use App\Job\RefreshInstanceListJob;
-use App\JobStamp\CancellableStamp;
-use App\JobStamp\RegistrableStamp;
 use App\Service\JobManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\Uuid;
 
 #[AsCommand('app:sync:lemmyverse')]

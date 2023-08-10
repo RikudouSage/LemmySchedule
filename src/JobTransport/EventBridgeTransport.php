@@ -2,10 +2,6 @@
 
 namespace App\JobTransport;
 
-use AsyncAws\DynamoDb\DynamoDbClient;
-use AsyncAws\DynamoDb\Input\PutItemInput;
-use AsyncAws\DynamoDb\ValueObject\AttributeValue;
-use AsyncAws\EventBridge\EventBridgeClient;
 use AsyncAws\Scheduler\Enum\ActionAfterCompletion;
 use AsyncAws\Scheduler\Enum\FlexibleTimeWindowMode;
 use AsyncAws\Scheduler\Enum\ScheduleState;
@@ -63,7 +59,6 @@ final readonly class EventBridgeTransport implements TransportInterface
         $encoded = base64_encode(
             serialize($encoded) ?: throw new LogicException('Serialization failed'),
         ) ?: throw new LogicException('Failed base64 encoding');
-
         $this->schedulerClient->createSchedule(new CreateScheduleInput([
             'ActionAfterCompletion' => ActionAfterCompletion::DELETE,
             'FlexibleTimeWindow' => new FlexibleTimeWindow([
