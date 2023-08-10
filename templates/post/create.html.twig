@@ -14,11 +14,11 @@
                                autofocus/>
                     </div>
                     <div class="form-group">
-                        <label for="inputCommunity">{{ "Community" | trans }}</label>
-                        <select id="inputCommunity" name="community" {{ stimulus_target('create-post', 'communitySelect') }}>
+                        <label for="inputCommunities">{{ "Communities" | trans }}</label>
+                        <select multiple id="inputCommunities" name="communities[]" {{ stimulus_target('create-post', 'communitySelect') }}>
                             <option></option>
                             {% for communityOption in communities %}
-                                <option {% if community|default('') is same as communityOption %}selected{% endif %}>{{ communityOption }}</option>
+                                <option {% if communityOption in selectedCommunities %}selected{% endif %}>{{ communityOption }}</option>
                             {% endfor %}
                         </select>
                     </div>

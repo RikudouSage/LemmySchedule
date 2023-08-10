@@ -68,6 +68,7 @@ final class PostController extends AbstractController
     public function createPost(): Response {
         return $this->render('post/create.html.twig', [
             'communities' => $this->getCommunities(),
+            'selectedCommunities' => [],
         ]);
     }
 
@@ -84,7 +85,7 @@ final class PostController extends AbstractController
 
         $data = [
             'title' => $request->request->get('title'),
-            'community' => $request->request->get('community'),
+            'selectedCommunities' => $request->request->all('communities'),
             'url' => $request->request->get('url'),
             'text' => $request->request->get('text'),
             'nsfw' => $request->request->getBoolean('nsfw'),
@@ -110,30 +111,39 @@ final class PostController extends AbstractController
             return $errorResponse();
         }
 
-        $community = $request->request->get('community');
-        if (str_starts_with($community, '!')) {
-            $community = substr($community, 1);
-        }
+        $communities = $data['selectedCommunities'];
+        $communities = array_map(function(string $community) {
+            if (str_starts_with($community, '!')) {
+                $community = substr($community, 1);
+            }
+
+            return $community;
+        }, $communities);
+
         try {
-            $community = $api->community()->get($community);
+            $communities = array_map(fn (string $community) => $api->community()->get($community), $communities);
         } catch (LemmyApiException) {
-            $this->addFlash('error', $translator->trans("Couldn't find the community, are you sure it exists?"));
+            $this->addFlash('error', $translator->trans("Couldn't find one or more of the communities, are you sure all of them exist?"));
             return $errorResponse();
         }
 
         $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
-        $jobManager->createJob(new
-        CreatePostJob(
-            jwt:$user->getJwt(),
-            instance: $user->getInstance(),
-            community: $community,
-            title: $data['title'],
-            url: $data['url'] ?: null,
-            text: $data['text'] ?: null,
-            nsfw: $data['nsfw'],
-        ), $dateTime);
+        foreach ($communities as $community) {
+            $jobManager->createJob(
+                new CreatePostJob(
+                    jwt:$user->getJwt(),
+                    instance: $user->getInstance(),
+                    community: $community,
+                    title: $data['title'],
+                    url: $data['url'] ?: null,
+                    text: $data['text'] ?: null,
+                    nsfw: $data['nsfw'],
+                ),
+                $dateTime,
+            );
+        }
 
-        $this->addFlash('success', $translator->trans('Post has been successfully scheduled.'));
+        $this->addFlash('success', $translator->trans('Posts have been successfully scheduled.'));
         return $this->redirectToRoute('app.post.list');
     }
 

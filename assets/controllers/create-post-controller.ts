@@ -23,7 +23,7 @@ export default class extends Controller {
 
         new TomSelect(this.communitySelectTarget, {
             create: true,
-            maxItems: 1,
+            maxItems: null,
         });
     }
 
