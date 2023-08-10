@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -31,7 +32,7 @@ final class PostController extends AbstractController
     }
 
     #[Route('/list', name: 'app.post.list', methods: [Request::METHOD_GET])]
-    public function listPosts(JobManager $jobManager, Request $request): Response
+    public function listPosts(JobManager $jobManager): Response
     {
         $jobs = array_filter($jobManager->listJobs(), function (Envelope $envelope) use ($jobManager) {
             $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
@@ -61,6 +62,29 @@ final class PostController extends AbstractController
 
         return $this->render('post/list.html.twig', [
             'jobs' => $jobs,
+        ]);
+    }
+
+    #[Route('/detail/{jobId}', name: 'app.post.detail', methods: [Request::METHOD_GET])]
+    public function detail(Uuid $jobId, JobManager $jobManager): Response
+    {
+        $job = $jobManager->getJob($jobId);
+        $message = $job->getMessage();
+        if (!$message instanceof CreatePostJob) {
+            throw $this->createNotFoundException();
+        }
+
+        $job = [
+            'jobId' => (string) $jobId,
+            'text' => $message->text,
+            'url' => $message->url,
+            'title' => $message->title,
+            'community' => sprintf('!%s@%s', $message->community->name, parse_url($message->community->actorId, PHP_URL_HOST)),
+            'nsfw' => $message->nsfw,
+        ];
+
+        return $this->render('post/detail.html.twig', [
+            'job' => $job,
         ]);
     }
 

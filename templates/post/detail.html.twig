@@ -1,0 +1,52 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "Scheduled post detail" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tbody>
+                    <tr>
+                        <td><strong>{{ "Job ID" | trans }}</strong></td>
+                        <td>{{ job.jobId }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ "Title" | trans }}</strong></td>
+                        <td>{{ job.title }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ "Community" | trans }}</strong></td>
+                        <td>{{ job.community }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ "URL" | trans }}</strong></td>
+                        <td>
+                            {% if job.url is null %}
+                                <code>N/A</code>
+                            {% else %}
+                                {{ job.url }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ "NSFW" | trans }}</strong></td>
+                        <td>{{ job.nsfw ? 'Yes' | trans : 'No' | trans }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ "Text" | trans }}</strong></td>
+                        <td class="text-wrap">
+                            {% if job.text is null %}
+                                <code>N/A</code>
+                            {% else %}
+                                {{ job.text }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

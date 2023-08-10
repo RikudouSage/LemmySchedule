@@ -29,8 +29,12 @@
                             }),
                             errorDeletingText: "There was an error when cancelling the job." | trans,
                         }) }}>
+                            <td>
+                                <a href="{{ path('app.post.detail', {jobId: job.jobId}) }}">
+                                    {{ job.title }}
+                                </a>
+                            </td>
                             <td>{{ job.community }}</td>
-                            <td>{{ job.title }}</td>
                             <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
                             <td>
                                 <button class="btn btn-danger" type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
