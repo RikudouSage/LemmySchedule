@@ -2,6 +2,8 @@
 
 namespace App\Authentication;
 
+use App\Exception\InvalidTotpTokenException;
+use App\Exception\ProvideTotpException;
 use App\Job\FetchCommunitiesJob;
 use App\JobStamp\CancellableStamp;
 use App\JobStamp\RegistrableStamp;
@@ -9,6 +11,8 @@ use App\Lemmy\LemmyApiFactory;
 use App\Service\CookieSetter;
 use DateTimeImmutable;
 use Rikudou\LemmyApi\Exception\IncorrectPasswordException;
+use Rikudou\LemmyApi\Exception\IncorrectTotpToken;
+use Rikudou\LemmyApi\Exception\MissingTotpToken;
 use Rikudou\LemmyApi\Exception\UserNotFoundException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -47,15 +51,30 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         $instance = $request->request->get('instance');
         $username = $request->request->get('username');
         $password = $request->request->get('password');
+        $totp = $request->request->get('totp');
+
+        $request->getSession()->set('last_instance', $instance);
+        $request->getSession()->set(Security::LAST_USERNAME, $username);
 
         if (!$instance || !$username || !$password) {
             throw new CustomUserMessageAuthenticationException($this->translator->trans('All fields must be filled.'));
         }
 
         try {
-            $api = $this->apiFactory->get($instance, $username, $password);
+            $api = $this->apiFactory->get(
+                instance: $instance,
+                username: $username,
+                password: $password,
+                totpToken: $totp,
+            );
         } catch (IncorrectPasswordException|UserNotFoundException) {
             throw new CustomUserMessageAuthenticationException($this->translator->trans('The username, instance or password is invalid'));
+        } catch (MissingTotpToken) {
+            $request->getSession()->set('last_password', $password);
+            throw new ProvideTotpException();
+        } catch (IncorrectTotpToken) {
+            $request->getSession()->set('last_password', $password);
+            throw new InvalidTotpTokenException();
         }
 
         $cookieValue = [
@@ -69,9 +88,6 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
             expire: (new DateTimeImmutable())->add(new DateInterval('P7D')),
         );
         $this->cookieSetter->setCookie($cookie);
-
-        $request->getSession()->set('last_instance', $instance);
-        $request->getSession()->set(Security::LAST_USERNAME, $username);
 
         $jobId = Uuid::v4();
         $this->messageBus->dispatch(new FetchCommunitiesJob(instance: $instance, jwt: $cookieValue['jwt']), [

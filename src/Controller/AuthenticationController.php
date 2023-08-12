@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Exception\InvalidTotpTokenException;
+use App\Exception\ProvideTotpException;
 use App\InstanceList\InstanceListProviderCollection;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,13 +31,29 @@ final class AuthenticationController extends AbstractController
         }
 
         $error = $authenticationUtils->getLastAuthenticationError();
+
         $lastUsername = $authenticationUtils->getLastUsername();
         $lastInstance = $request->getSession()->get('last_instance', $this->defaultInstance);
+        $lastPassword = $request->getSession()->get('last_password');
+        if ($lastPassword) {
+            $request->getSession()->remove('last_password');
+        }
+
+        $showTotp = false;
+        if ($error instanceof ProvideTotpException) {
+            $error = null;
+            $showTotp = true;
+        }
+        if ($error instanceof InvalidTotpTokenException) {
+            $showTotp = true;
+        }
 
         return $this->render('authentication/login.html.twig', [
             'last_username' => $lastUsername,
+            'last_password' => $lastPassword,
             'error' => $error,
             'last_instance' => $lastInstance,
+            'show_totp' => $showTotp,
             'instances' => $instanceListProvider->getInstances(),
         ]);
     }

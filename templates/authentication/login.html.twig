@@ -25,8 +25,14 @@
                     </div>
                     <div class="form-group">
                         <label for="inputPassword">{{ "Password" | trans }}</label>
-                        <input type="password" name="password" id="inputPassword" class="form-control" required autocomplete="current-password" />
+                        <input type="password" value="{{ last_password }}" name="password" id="inputPassword" class="form-control" required autocomplete="current-password" />
                     </div>
+                    {% if show_totp %}
+                        <div class="form-group">
+                            <label for="inputTotp">{{ "TOTP token" | trans }}</label>
+                            <input type="text" name="totp" id="inputTotp" class="form-control" inputmode="numeric" />
+                        </div>
+                    {% endif %}
                     {% if error %}
                         <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
                     {% endif %}

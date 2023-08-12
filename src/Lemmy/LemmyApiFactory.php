@@ -19,7 +19,7 @@ final readonly class LemmyApiFactory
     ) {
     }
 
-    public function get(string $instance, ?string $username = null, ?string $password = null, ?string $jwt = null): LemmyApi
+    public function get(string $instance, ?string $username = null, ?string $password = null, ?string $jwt = null, ?string $totpToken = null): LemmyApi
     {
         $api = new DefaultLemmyApi(
             instanceUrl: "https://{$instance}",
@@ -29,7 +29,7 @@ final readonly class LemmyApiFactory
         );
 
         if ($username && $password) {
-            $api->login($username, $password);
+            $api->login($username, $password, $totpToken);
         } elseif ($jwt) {
             $api->setJwt($jwt);
         } else {
