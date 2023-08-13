@@ -4,10 +4,12 @@ namespace App\JobHandler;
 
 use App\Job\PinUnpinPostJob;
 use App\Lemmy\LemmyApiFactory;
+use JetBrains\PhpStorm\Deprecated;
 use Rikudou\LemmyApi\Enum\PostFeatureType;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+#[Deprecated]
 #[AsMessageHandler]
 final readonly class PinUnpinPostJobHandler
 {

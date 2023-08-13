@@ -7,7 +7,7 @@
         <div class="card">
             <div class="card-body">
                 <p>
-                    {{ "Note: This only works if you're a mod of the community you're pinning the post in." | trans }}
+                    {{ "Note: This only works if you're a mod of the community (or admin of the instance in case of instance pinning) you're pinning the post in." | trans }}
                 </p>
                 <form method="post" action="{{ path('app.post.pin.do') }}" {{ stimulus_controller('create-post-pin', {
                     fetchPostUrl: path('app.post.ajax.fetch'),
@@ -16,7 +16,9 @@
                     convertingUrlToIdError: 'There was an error while converting the URL to a post ID, please provide the post ID manually.' | trans,
                     notFoundError: "We couldn't find the post, are you sure it exists?" | trans,
                     genericError: "There was an error." | trans,
-                    yes: "Yes" | trans,
+                    yesCommunity: "Yes (community)" | trans,
+                    yesInstance: "Yes (instance)" | trans,
+                    yesBoth: "Yes (instance & community)" | trans,
                     no: "No" | trans,
                 }) }}>
                     <div {{ stimulus_target('create-post-pin', 'messageHolder') }}></div>
@@ -56,17 +58,30 @@
                         <h3>{{ "Do you want to pin or unpin the post?" | trans }}</h3>
                         <div class="form-group">
                             <div class="custom-control custom-radio">
-                                <input {{ stimulus_target('create-post-pin', 'pinRadio') }}
+                                <input {{ stimulus_target('create-post-pin', 'pinCommunityRadio') }}
                                         class="custom-control-input custom-control-input-success" type="radio" id="inputPin"
-                                        name="pin" value="1">
-                                <label for="inputPin" class="custom-control-label">{{ "Pin" | trans }}</label>
+                                        name="pin" value="{{ constant('App\\Enum\\PinType::PinToCommunity').value }}">
+                                <label for="inputPin" class="custom-control-label">{{ "Pin to community" | trans }}</label>
                             </div>
                             <div class="custom-control custom-radio">
-                                <input {{ stimulus_target('create-post-pin', 'unpinRadio') }}
+                                <input {{ stimulus_target('create-post-pin', 'unpinCommunityRadio') }}
                                         class="custom-control-input custom-control-input-danger" type="radio"
                                         id="inputUnpin"
-                                        name="pin" value="0">
-                                <label for="inputUnpin" class="custom-control-label">{{ "Unpin" | trans }}</label>
+                                        name="pin" value="{{ constant('App\\Enum\\PinType::UnpinFromCommunity').value }}">
+                                <label for="inputUnpin" class="custom-control-label">{{ "Unpin from commmunity" | trans }}</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input {{ stimulus_target('create-post-pin', 'pinInstanceRadio') }}
+                                        class="custom-control-input custom-control-input-success" type="radio" id="inputPin"
+                                        name="pin" value="{{ constant('App\\Enum\\PinType::PinToInstance').value }}">
+                                <label for="inputPin" class="custom-control-label">{{ "Pin to instance" | trans }}</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input {{ stimulus_target('create-post-pin', 'unpinInstanceRadio') }}
+                                        class="custom-control-input custom-control-input-danger" type="radio"
+                                        id="inputUnpin"
+                                        name="pin" value="{{ constant('App\\Enum\\PinType::UnpinFromInstance').value }}">
+                                <label for="inputUnpin" class="custom-control-label">{{ "Unpin from instance" | trans }}</label>
                             </div>
                         </div>
 

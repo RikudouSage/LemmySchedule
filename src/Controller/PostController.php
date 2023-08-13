@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Authentication\User;
+use App\Enum\PinType;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJob;
+use App\Job\PinUnpinPostJobV2;
 use App\JobStamp\MetadataStamp;
 use App\Lemmy\LemmyApiFactory;
 use App\Service\CurrentUserService;
@@ -270,19 +272,26 @@ final class PostController extends AbstractController
 
             $urlOrId = $matches[1];
             if (!is_numeric($urlOrId)) {
-                $this->addFlash('error', 'Failed extracting ID from URL, please provide the ID manually.');
+                $this->addFlash('error', $translator->trans('Failed extracting ID from URL, please provide the ID manually.'));
 
                 return $errorResponse();
             }
         }
 
+        $pin = PinType::tryFrom($request->request->getInt('pin'));
+        if ($pin === null) {
+            $this->addFlash('error', $translator->trans('Invalid value for type of action.'));
+
+            return $errorResponse();
+        }
+
         $dateTime = new DateTimeImmutable("{$request->request->get('scheduleDateTime')}:00{$request->request->get('timezoneOffset')}");
         $jobManager->createJob(
-            new PinUnpinPostJob(
+            new PinUnpinPostJobV2(
                 postId: (int) $urlOrId,
                 jwt: $currentUserService->getCurrentUser()?->getJwt() ?? throw new LogicException('No user logged in'),
                 instance: $currentUserService->getCurrentUser()?->getInstance() ?? throw new LogicException('No user logged in'),
-                pin: $request->request->getBoolean('pin'),
+                pin: $pin,
             ),
             $dateTime,
         );

@@ -6,6 +6,7 @@ interface Post {
     post: {
         name: string;
         featuredCommunity: boolean;
+        featuredLocal: boolean;
         body: string | null;
         url: string | null;
     },
@@ -29,8 +30,10 @@ export default class extends Controller {
         'pinnedCell',
         'communityCell',
         'restOfTheForm',
-        'pinRadio',
-        'unpinRadio',
+        'pinCommunityRadio',
+        'unpinCommunityRadio',
+        'pinInstanceRadio',
+        'unpinInstanceRadio',
         'timezoneOffset',
     ];
     static values = {
@@ -40,7 +43,9 @@ export default class extends Controller {
         convertingUrlToIdError: String,
         notFoundError: String,
         genericError: String,
-        yes: String,
+        yesCommunity: String,
+        yesInstance: String,
+        yesBoth: String,
         no: String,
     };
 
@@ -53,8 +58,10 @@ export default class extends Controller {
     private pinnedCellTarget: HTMLTableCellElement;
     private communityCellTarget: HTMLTableCellElement;
     private restOfTheFormTarget: HTMLDivElement;
-    private pinRadioTarget: HTMLInputElement;
-    private unpinRadioTarget: HTMLInputElement;
+    private pinCommunityRadioTarget: HTMLInputElement;
+    private unpinCommunityRadioTarget: HTMLInputElement;
+    private pinInstanceRadioTarget: HTMLInputElement;
+    private unpinInstanceRadioTarget: HTMLInputElement;
     private timezoneOffsetTarget: HTMLInputElement;
 
     private fetchPostUrlValue: string;
@@ -63,7 +70,9 @@ export default class extends Controller {
     private convertingUrlToIdErrorValue: string;
     private notFoundErrorValue: string;
     private genericErrorValue: string;
-    private yesValue: string;
+    private yesCommunityValue: string;
+    private yesInstanceValue: string;
+    private yesBothValue: string
     private noValue: string;
 
     public async connect() {
@@ -110,13 +119,26 @@ export default class extends Controller {
         this.titleCellTarget.innerText = post.post.name;
         this.urlCellTarget.innerHTML = post.post.url ? post.post.url : `<code>N/A</code>`;
         this.textCellTarget.innerHTML = post.post.body ? `<pre>${post.post.body}</pre>` : `<code>N/A</code>`;
-        this.pinnedCellTarget.innerText = post.post.featuredCommunity ? this.yesValue : this.noValue;
+
+        let pinnedText: string;
+        if (post.post.featuredCommunity && post.post.featuredLocal) {
+            pinnedText = this.yesBothValue;
+        } else if (post.post.featuredCommunity) {
+            pinnedText = this.yesCommunityValue;
+        } else if (post.post.featuredLocal) {
+            pinnedText = this.yesInstanceValue;
+        } else {
+            pinnedText = this.noValue;
+        }
+        this.pinnedCellTarget.innerText = pinnedText;
         this.communityCellTarget.innerText = `${post.community.name} (${post.community.actorId})`;
 
-        if (post.post.featuredCommunity) {
-            this.unpinRadioTarget.checked = true;
+        if (post.post.featuredLocal) {
+            this.unpinInstanceRadioTarget.checked = true;
+        } else if (post.post.featuredCommunity) {
+            this.unpinCommunityRadioTarget.checked = true;
         } else {
-            this.pinRadioTarget.checked = true;
+            this.pinCommunityRadioTarget.checked = true;
         }
     }
 }

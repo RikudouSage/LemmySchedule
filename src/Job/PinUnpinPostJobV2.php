@@ -2,16 +2,15 @@
 
 namespace App\Job;
 
-use JetBrains\PhpStorm\Deprecated;
+use App\Enum\PinType;
 
-#[Deprecated]
-final readonly class PinUnpinPostJob
+final class PinUnpinPostJobV2
 {
     public function __construct(
         public int $postId,
         public string $jwt,
         public string $instance,
-        public bool $pin,
+        public PinType $pin,
     ) {
     }
 }
