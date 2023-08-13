@@ -92,11 +92,11 @@
                             <td>
                                 {% if job.pin is same as constant('App\\Enum\\PinType::PinToCommunity') %}
                                     {{ "Pin to community" | trans }}
-                                {% elseif job.in is same as constant('App\\Enum\\PinType::UnpinFromCommunity') %}
+                                {% elseif job.pin is same as constant('App\\Enum\\PinType::UnpinFromCommunity') %}
                                     {{ "Unpin from community" | trans }}
-                                {% elseif job.in is same as constant('App\\Enum\\PinType::PinToInstance') %}
+                                {% elseif job.pin is same as constant('App\\Enum\\PinType::PinToInstance') %}
                                     {{ "Pin to instance" | trans }}
-                                {% elseif job.in is same as constant('App\\Enum\\PinType::UnpinFromInstance') %}
+                                {% elseif job.pin is same as constant('App\\Enum\\PinType::UnpinFromInstance') %}
                                     {{ "Unpin from instance" | trans }}
                                 {% endif %}
                             </td>
