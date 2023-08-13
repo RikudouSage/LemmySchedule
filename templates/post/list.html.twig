@@ -89,7 +89,17 @@
                             <td>
                                 {{ job.title }} (<a href="{{ job.url }}" target="_blank">{{ job.url }}</a>)
                             </td>
-                            <td>{{ job.pin ? "Pin" | trans : "Unpin" | trans }}</td>
+                            <td>
+                                {% if job.pin is same as constant('App\\Enum\\PinType::PinToCommunity') %}
+                                    {{ "Pin to community" | trans }}
+                                {% elseif job.in is same as constant('App\\Enum\\PinType::UnpinFromCommunity') %}
+                                    {{ "Unpin from community" | trans }}
+                                {% elseif job.in is same as constant('App\\Enum\\PinType::PinToInstance') %}
+                                    {{ "Pin to instance" | trans }}
+                                {% elseif job.in is same as constant('App\\Enum\\PinType::UnpinFromInstance') %}
+                                    {{ "Unpin from instance" | trans }}
+                                {% endif %}
+                            </td>
                             <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
                             <td>
                                 <button class="btn btn-danger" type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>

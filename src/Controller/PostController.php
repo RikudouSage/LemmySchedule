@@ -69,11 +69,12 @@ final class PostController extends AbstractController
         $postPinJobs = array_filter($jobManager->listJobs(), static function (Envelope $envelope) use ($jobManager) {
             $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
 
-            return $envelope->getMessage() instanceof PinUnpinPostJob && $jobId && !$jobManager->isCancelled($jobId);
+            return ($envelope->getMessage() instanceof PinUnpinPostJob || $envelope->getMessage() instanceof PinUnpinPostJobV2)
+                && $jobId && !$jobManager->isCancelled($jobId);
         });
         $postPinJobs = array_map(static function (Envelope $job) use ($api) {
             $message = $job->getMessage();
-            assert($message instanceof PinUnpinPostJob);
+            assert($message instanceof PinUnpinPostJob || $message instanceof PinUnpinPostJobV2);
 
             $metadata = $job->last(MetadataStamp::class);
             assert($metadata !== null);
@@ -93,7 +94,9 @@ final class PostController extends AbstractController
                 'dateTime' => $dateTime->format('c'),
                 'url' => "https://{$message->instance}/post/{$message->postId}",
                 'title' => $post?->post->name ?? 'Unknown',
-                'pin' => $message->pin,
+                'pin' => $message instanceof PinUnpinPostJob
+                    ? ($message->pin ? PinType::PinToCommunity : PinType::UnpinFromCommunity)
+                    : $message->pin,
             ];
         }, $postPinJobs);
 
