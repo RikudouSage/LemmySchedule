@@ -6,6 +6,10 @@
 parameters:
     app.default_instance: '%env(DEFAULT_INSTANCE)%'
 
+    app.file_uploader.local.path: '%kernel.project_dir%/var/images'
+    app.file_uploader.s3.bucket: '%env(S3_FILE_UPLOADER_BUCKET)%'
+    app.file_uploader.class: '%env(FILE_UPLOADER_CLASS)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -27,3 +31,12 @@ services:
     # please note that last definitions always *replace* previous ones
 
     AsyncAws\Scheduler\SchedulerClient:
+    AsyncAws\S3\S3Client:
+
+    App\FileUploader\LocalFileUploader:
+        arguments:
+            $uploadPath: '%app.file_uploader.local.path%'
+
+    App\FileUploader\S3FileUploader:
+        arguments:
+            $bucket: '%app.file_uploader.s3.bucket%'

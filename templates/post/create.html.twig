@@ -6,7 +6,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
-                <form method="post" action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post') }}>
+                <form method="post" enctype="multipart/form-data" action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post') }}>
                     <div class="form-group">
                         <label for="inputTitle">{{ "Title" | trans }}</label>
                         <input id="inputTitle" class="form-control" type="text" name="title"
@@ -26,6 +26,10 @@
                     <div class="form-group">
                         <label for="inputUrl">{{ "URL" | trans }}</label>
                         <input id="inputUrl" class="form-control" type="url" name="url" value="{{ url|default('') }}"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="file">{{ "Image" | trans }}</label>
+                        <input id="file" accept="image/*" class="form-control" type="file" name="image" />
                     </div>
                     <div class="form-group">
                         <label for="inputLanguage">{{ "Language" | trans }}</label>
