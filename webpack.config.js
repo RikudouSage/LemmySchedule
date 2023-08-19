@@ -73,7 +73,7 @@ Encore
     //.autoProvidejQuery()
 ;
 
-if (Encore.isProduction()) {
+if (process.env.DOMAIN_NAME && Encore.isProduction()) {
     Encore
         .setPublicPath(`https://assets.${process.env.DOMAIN_NAME}/build`)
         .setManifestKeyPrefix('build/')
