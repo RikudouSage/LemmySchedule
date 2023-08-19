@@ -6,7 +6,7 @@
 parameters:
     app.default_instance: '%env(DEFAULT_INSTANCE)%'
 
-    app.file_uploader.local.path: '%kernel.project_dir%/var/images'
+    app.file_uploader.local.path: '%env(resolve:LOCAL_FILE_UPLOADER_PATH)%'
     app.file_uploader.s3.bucket: '%env(S3_FILE_UPLOADER_BUCKET)%'
     app.file_uploader.class: '%env(FILE_UPLOADER_CLASS)%'
 
