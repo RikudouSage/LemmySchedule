@@ -30,7 +30,7 @@
                     {% if show_totp %}
                         <div class="form-group">
                             <label for="inputTotp">{{ "TOTP token" | trans }}</label>
-                            <input type="text" name="totp" id="inputTotp" class="form-control" inputmode="numeric" />
+                            <input type="text" name="totp" id="inputTotp" class="form-control" inputmode="numeric" autofocus />
                         </div>
                     {% endif %}
                     {% if error %}
