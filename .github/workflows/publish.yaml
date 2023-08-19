@@ -16,6 +16,7 @@ jobs:
       APP_ENV: prod
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      FILE_UPLOADER_CLASS: App\FileUploader\S3FileUploader
     steps:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
