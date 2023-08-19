@@ -2,6 +2,8 @@
 
 namespace App\InstanceList;
 
+use App\Job\RefreshInstanceListJob;
+use App\Service\JobManager;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
 #[AsTaggedItem(priority: -1_000)]
@@ -9,6 +11,7 @@ final readonly class DefaultInstanceListProvider implements InstanceListProvider
 {
     public function __construct(
         private string $defaultInstance,
+        private JobManager $jobManager,
     ) {
     }
 
@@ -19,6 +22,8 @@ final readonly class DefaultInstanceListProvider implements InstanceListProvider
 
     public function getInstances(): array
     {
+        $this->jobManager->createJob(new RefreshInstanceListJob(), null);
+
         return array_unique([
             $this->defaultInstance,
             'lemmings.world',
