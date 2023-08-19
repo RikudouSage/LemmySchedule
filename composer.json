@@ -17,6 +17,7 @@
         "rikudou/lemmy-api": "^0.2.3",
         "rikudou/psr6-dynamo-db-bundle": "^4.0",
         "symfony/amazon-sqs-messenger": "6.3.*",
+        "symfony/apache-pack": "^1.0",
         "symfony/cache": "6.3.*",
         "symfony/console": "6.3.*",
         "symfony/dotenv": "6.3.*",
