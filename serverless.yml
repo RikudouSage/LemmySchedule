@@ -32,12 +32,21 @@ provider:
                       - iam:PassRole
                   Resource:
                       - !Sub arn:aws:iam::${AWS::AccountId}:role/${self:service}-${self:provider.stage}-EventBridgeRole-*
+                - Effect: Allow
+                  Action:
+                      - s3:PutObject
+                      - s3:DeleteObject
+                      - s3:GetObject
+                  Resource:
+                      - !Join ['/', [!GetAtt UploadsBucket.Arn, '*']]
     environment:
         # Symfony environment variables
         APP_ENV: ${self:provider.stage}
         APP_SECRET: !Join [ '', [ '{{resolve:secretsmanager:', !Ref AppSecret, ':SecretString:secret}}' ] ]
         DYNAMODB_CACHE_TABLE: !Ref CacheTable
         MESSENGER_TRANSPORT_DSN: eb://LemmySchedule
+        S3_FILE_UPLOADER_BUCKET: !Ref UploadsBucket
+        FILE_UPLOADER_CLASS: App\FileUploader\S3FileUploader
 
 plugins:
   - ./vendor/bref/bref
@@ -206,6 +215,9 @@ resources:
                       SetIdentifier: !Ref AssetsCertificate
                       ResourceRecords:
                           - !GetAtt AssetsCertificateDnsRecord.Value
+        UploadsBucket:
+            Type: AWS::S3::Bucket
+            Properties:
         AssetsBucket:
             Type: AWS::S3::Bucket
             Properties:
