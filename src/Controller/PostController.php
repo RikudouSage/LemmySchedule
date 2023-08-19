@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Authentication\User;
 use App\Enum\PinType;
+use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJob;
 use App\Job\PinUnpinPostJobV2;
@@ -18,6 +19,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -124,6 +126,7 @@ final class PostController extends AbstractController
             'nsfw' => $message->nsfw,
             'pinToCommunity' => $message->pinToCommunity,
             'language' => $message->language,
+            'image' => $message->imageId,
         ];
 
         return $this->render('post/detail.html.twig', [
@@ -149,6 +152,7 @@ final class PostController extends AbstractController
         TranslatorInterface $translator,
         JobManager $jobManager,
         CurrentUserService $currentUserService,
+        FileUploader $fileUploader,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -165,11 +169,19 @@ final class PostController extends AbstractController
             'selectedLanguage' => Language::tryFrom($request->request->getInt('language')) ?? Language::Undetermined,
         ];
 
+        $image = $request->files->get('image');
+
         $errorResponse = fn () => $this->render('post/create.html.twig', [
             ...$data,
             'communities' => $this->getCommunities(),
+            'languages' => Language::cases(),
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
 
+        if ($image && $data['url']) {
+            $this->addFlash('error', $translator->trans('You cannot add both image and URL. Note that due to security concerns you have to select the file again.'));
+
+            return $errorResponse();
+        }
         if (!$data['title']) {
             $this->addFlash('error', $translator->trans('The post must have a title.'));
 
@@ -203,6 +215,11 @@ final class PostController extends AbstractController
             return $errorResponse();
         }
 
+        $imageId = null;
+        if ($image instanceof UploadedFile) {
+            $imageId = $fileUploader->upload($image);
+        }
+
         $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
         foreach ($communities as $community) {
             $jobManager->createJob(
@@ -216,6 +233,7 @@ final class PostController extends AbstractController
                     language: $data['selectedLanguage'],
                     nsfw: $data['nsfw'],
                     pinToCommunity: $data['pinToCommunity'],
+                    imageId: $imageId,
                 ),
                 $dateTime,
             );

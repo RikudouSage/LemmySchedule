@@ -31,6 +31,10 @@
                         </td>
                     </tr>
                     <tr>
+                        <td><strong>{{ "Has image" | trans }}</strong></td>
+                        <td>{{ job.image is not same as null ? 'Yes' | trans : 'No' | trans }}</td>
+                    </tr>
+                    <tr>
                         <td><strong>{{ "NSFW" | trans }}</strong></td>
                         <td>{{ job.nsfw ? 'Yes' | trans : 'No' | trans }}</td>
                     </tr>
