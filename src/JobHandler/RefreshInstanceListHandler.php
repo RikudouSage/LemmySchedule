@@ -37,7 +37,7 @@ final readonly class RefreshInstanceListHandler
             flags: JSON_THROW_ON_ERROR,
         );
         assert(is_array($json));
-        usort($json, static function (array $a, array $b) {
+        usort($json, function (array $a, array $b) {
             if ($a['base'] === $this->defaultInstance) {
                 return -1;
             }
