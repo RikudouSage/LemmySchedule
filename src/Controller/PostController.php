@@ -166,6 +166,7 @@ final class PostController extends AbstractController
             'scheduleDateTime' => $request->request->get('scheduleDateTime'),
             'timezoneOffset' => $request->request->get('timezoneOffset'),
             'pinToCommunity' => $request->request->getBoolean('pinToCommunity'),
+            'pinToInstance' => $request->request->getBoolean('pinToInstance'),
             'selectedLanguage' => Language::tryFrom($request->request->getInt('language')) ?? Language::Undetermined,
         ];
 
@@ -233,6 +234,7 @@ final class PostController extends AbstractController
                     language: $data['selectedLanguage'],
                     nsfw: $data['nsfw'],
                     pinToCommunity: $data['pinToCommunity'],
+                    pinToInstance: $data['pinToInstance'],
                     imageId: $imageId,
                 ),
                 $dateTime,

@@ -46,5 +46,12 @@ final readonly class CreatePostJobHandler
                 // ignore it, user probably doesn't have the permission to do that
             }
         }
+        if ($job->pinToInstance) {
+            try {
+                $api->post()->pin($post->post, PostFeatureType::Local);
+            } catch (LemmyApiException) {
+                // ignore it, user probably doesn't have the permission to do that
+            }
+        }
     }
 }

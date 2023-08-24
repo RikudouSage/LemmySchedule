@@ -65,6 +65,16 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input class="custom-control-input" type="checkbox" id="inputPinToInstance"
+                                   name="pinToInstance"
+                                   {% if pinToInstance|default(false) %}checked{% endif %} />
+                            <label for="inputPinToInstance"
+                                   class="custom-control-label">{{ "Pin to instance" | trans }}</label>
+                            <small>({{ "note that you must be an admin for this to work" | trans }})</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="inputScheduleDateTime">{{ "When do you want to post?" | trans }}</label>
                         <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
                                type="datetime-local" required value="{{ scheduleDateTime|default('') }}"/>

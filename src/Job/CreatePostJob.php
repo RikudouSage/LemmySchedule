@@ -18,6 +18,7 @@ final readonly class CreatePostJob
         public Language $language = Language::Undetermined,
         public ?bool $nsfw = null,
         public bool $pinToCommunity = false,
+        public bool $pinToInstance = false,
         public ?Uuid $imageId = null,
     ) {
     }
@@ -28,6 +29,7 @@ final readonly class CreatePostJob
     public function __unserialize(array $data): void
     {
         $data['pinToCommunity'] ??= false;
+        $data['pinToInstance'] ??= false;
         $data['imageId'] ??= null;
 
         foreach ($data as $property => $value) {
