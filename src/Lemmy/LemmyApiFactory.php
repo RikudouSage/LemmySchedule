@@ -2,6 +2,7 @@
 
 namespace App\Lemmy;
 
+use App\Authentication\User;
 use App\Service\CurrentUserService;
 use LogicException;
 use Psr\Http\Client\ClientInterface;
@@ -39,10 +40,13 @@ final readonly class LemmyApiFactory
         return $api;
     }
 
+    public function getForUser(User $user): LemmyApi
+    {
+        return $this->get($user->getInstance(), $user->getUsername(), jwt: $user->getJwt());
+    }
+
     public function getForCurrentUser(): LemmyApi
     {
-        $user = $this->currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
-
-        return $this->get($user->getInstance(), $user->getUsername(), jwt: $user->getJwt());
+        return $this->getForUser($this->currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in'));
     }
 }

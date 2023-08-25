@@ -2,7 +2,8 @@
 
 namespace App\JobHandler;
 
-use App\FileUploader\FileUploader;
+use App\Authentication\User;
+use App\FileProvider\FileProvider;
 use App\Job\CreatePostJob;
 use App\Lemmy\LemmyApiFactory;
 use Rikudou\LemmyApi\Enum\PostFeatureType;
@@ -14,7 +15,7 @@ final readonly class CreatePostJobHandler
 {
     public function __construct(
         private LemmyApiFactory $apiFactory,
-        private FileUploader $fileUploader,
+        private FileProvider $fileProvider,
     ) {
     }
 
@@ -23,13 +24,7 @@ final readonly class CreatePostJobHandler
         $imageUrl = null;
         $api = $this->apiFactory->get($job->instance, jwt: $job->jwt);
         if ($imageId = $job->imageId) {
-            $image = $this->fileUploader->get($imageId);
-            $result = $api->miscellaneous()->uploadImage($image);
-            if ($result->success) {
-                $imageUrl = "https://{$job->instance}/pictrs/image/{$result->files[0]->file}";
-            }
-
-            $this->fileUploader->delete($imageId);
+            $imageUrl = $this->fileProvider->getLink($imageId, new User('fake_user', $job->instance, $job->jwt));
         }
         $post = $api->post()->create(
             community: $job->community,
