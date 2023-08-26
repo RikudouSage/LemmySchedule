@@ -19,6 +19,8 @@ final class ScheduleExpressionParser
 
     private const DAY_OF_WEEK = 'N';
 
+    private const LAST_DAY_OF_MONTH = 't';
+
     public function getNextRunDate(
         string $expression,
         DateTimeInterface $now = new DateTimeImmutable(),
@@ -57,13 +59,30 @@ final class ScheduleExpressionParser
                 if ($monthOrdinal !== self::ALL) {
                     $dateTime = $dateTime->add(new DateInterval("P{$monthOrdinal}M"));
                 }
+                $targetDayOfMonth = $dayOfMonth;
+                if ($targetDayOfMonth === 'L') {
+                    $targetDayOfMonth = $dateTime->format(self::LAST_DAY_OF_MONTH);
+                }
                 $dateTime = $dateTime->setDate(
                     $dateTime->format(self::YEAR),
                     $dateTime->format(self::MONTH),
-                    $dayOfMonth,
+                    $targetDayOfMonth,
                 );
                 if ($dateTime <= $now) {
-                    $dateTime = $dateTime->add(new DateInterval('P1M'));
+                    if ($dayOfMonth === 'L') {
+                        $dateTime = $dateTime->setDate(
+                            $dateTime->format(self::YEAR),
+                            (int) $dateTime->format(self::MONTH) + 1,
+                            1
+                        );
+                        $dateTime = $dateTime->setDate(
+                            $dateTime->format(self::YEAR),
+                            $dateTime->format(self::MONTH),
+                            $dateTime->format(self::LAST_DAY_OF_MONTH),
+                        );
+                    } else {
+                        $dateTime = $dateTime->add(new DateInterval('P1M'));
+                    }
                 }
                 break;
             case ScheduleType::Week:
