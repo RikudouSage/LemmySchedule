@@ -75,6 +75,8 @@ functions:
         handler: bin/console
         timeout: 120 # in seconds
         memorySize: 512
+        environment:
+            CONSOLE_FUNCTION: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-console
         layers:
             - ${bref:layer.php-82} # PHP
             - ${bref:layer.console} # The "console" layer
