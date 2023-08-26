@@ -294,8 +294,8 @@ resources:
                                 Action:
                                     - lambda:InvokeFunction
                                 Resource:
-                                    - !Sub arn:aws:lambda:${AWS::Region}:${AWS:AccountId}:function:${self:service}-${self:provider.stage}-console
-                                    - !Sub arn:aws:lambda:${AWS::Region}:${AWS:AccountId}:function:${self:service}-${self:provider.stage}-console:*
+                                    - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-console
+                                    - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-console:*
     Outputs:
         TestUrl:
             Value: https://${self:custom.Domain}
