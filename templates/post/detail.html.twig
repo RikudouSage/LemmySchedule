@@ -13,6 +13,28 @@
                         <td>{{ job.jobId }}</td>
                     </tr>
                     <tr>
+                        <td><strong>{{ "Scheduled at" | trans }}</strong></td>
+                        <td {{ stimulus_controller('local-date-time') }}>{{ job.dateTime | date('c') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{{ "Recurring post" | trans }}</strong></td>
+                        <td>{{ job.recurring ? "Yes" | trans : "No" | trans }}</td>
+                    </tr>
+                    {% if job.recurring %}
+                        <tr>
+                            <td><strong>{{ "Next runs" | trans }}</strong></td>
+                            <td>
+                                <ul>
+                                    {% for nextRun in job.nextRuns %}
+                                        <li {{ stimulus_controller('local-date-time') }}>
+                                            {{ nextRun.format('c') }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    {% endif %}
+                    <tr>
                         <td><strong>{{ "Title" | trans }}</strong></td>
                         <td>{{ job.title }}</td>
                     </tr>

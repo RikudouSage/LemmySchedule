@@ -3,7 +3,10 @@
 namespace App\Controller;
 
 use App\Authentication\User;
+use App\Enum\DayType;
 use App\Enum\PinType;
+use App\Enum\ScheduleType;
+use App\Enum\Weekday;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJob;
@@ -12,8 +15,10 @@ use App\JobStamp\MetadataStamp;
 use App\Lemmy\LemmyApiFactory;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
+use App\Service\ScheduleExpressionParser;
 use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
 use Rikudou\LemmyApi\Enum\Language;
@@ -65,6 +70,7 @@ final class PostController extends AbstractController
                 'dateTime' => $dateTime->format('c'),
                 'community' => $community,
                 'title' => $title,
+                'recurring' => $message->scheduleExpression !== null,
             ];
         }, $postCreateJobs);
 
@@ -109,13 +115,22 @@ final class PostController extends AbstractController
     }
 
     #[Route('/detail/{jobId}', name: 'app.post.detail', methods: [Request::METHOD_GET])]
-    public function detail(Uuid $jobId, JobManager $jobManager): Response
-    {
+    public function detail(
+        Uuid $jobId,
+        JobManager $jobManager,
+        ScheduleExpressionParser $scheduleExpressionParser,
+    ): Response {
         $job = $jobManager->getJob($jobId);
-        $message = $job->getMessage();
+        $message = $job?->getMessage();
         if (!$message instanceof CreatePostJob) {
             throw $this->createNotFoundException();
         }
+
+        $metadata = $job->last(MetadataStamp::class);
+        assert($metadata !== null);
+
+        $dateTime = $metadata->metadata['expiresAt'];
+        assert($dateTime instanceof DateTimeInterface);
 
         $job = [
             'jobId' => (string) $jobId,
@@ -127,6 +142,13 @@ final class PostController extends AbstractController
             'pinToCommunity' => $message->pinToCommunity,
             'language' => $message->language,
             'image' => $message->imageId,
+            'recurring' => $message->scheduleExpression !== null,
+            'dateTime' => $dateTime,
+            'nextRuns' => $message->scheduleExpression ? [
+                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 1, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
+                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 2, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
+                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 3, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
+            ] : null,
         ];
 
         return $this->render('post/detail.html.twig', [
@@ -153,6 +175,7 @@ final class PostController extends AbstractController
         JobManager $jobManager,
         CurrentUserService $currentUserService,
         FileUploader $fileUploader,
+        ScheduleExpressionParser $scheduleExpressionParser,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -168,7 +191,19 @@ final class PostController extends AbstractController
             'pinToCommunity' => $request->request->getBoolean('pinToCommunity'),
             'pinToInstance' => $request->request->getBoolean('pinToInstance'),
             'selectedLanguage' => Language::tryFrom($request->request->getInt('language')) ?? Language::Undetermined,
+            'scheduler' => $request->request->all('scheduler'),
+            'recurring' => $request->request->getBoolean('recurring'),
         ];
+        $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
+        if (isset($data['scheduler']['scheduleType'])) {
+            $data['scheduler']['scheduleType'] = ScheduleType::from((int) $data['scheduler']['scheduleType']);
+        }
+        if (isset($data['scheduler']['selectedDayType'])) {
+            $data['scheduler']['selectedDayType'] = DayType::from((int) $data['scheduler']['selectedDayType']);
+        }
+        if (isset($data['scheduler']['weekday'])) {
+            $data['scheduler']['weekday'] = Weekday::from((int) $data['scheduler']['weekday']);
+        }
 
         $image = $request->files->get('image');
 
@@ -188,15 +223,24 @@ final class PostController extends AbstractController
 
             return $errorResponse();
         }
-        if (!$data['scheduleDateTime']) {
-            $this->addFlash('error', $translator->trans('The schedule date and time must be set.'));
-
-            return $errorResponse();
-        }
         if (!$data['timezoneOffset']) {
             $this->addFlash('error', $translator->trans('Failed to get your timezone offset. Do you have javascript enabled?'));
 
             return $errorResponse();
+        }
+        if ($data['recurring']) {
+            $data['scheduler']['timezone'] ??= 'UTC';
+            if (!($data['scheduler']['expression'] ?? false)) {
+                $this->addFlash('error', $translator->trans('The schedule recurring configuration is invalid.'));
+
+                return $errorResponse();
+            }
+        } else {
+            if (!$data['scheduleDateTime']) {
+                $this->addFlash('error', $translator->trans('The schedule date and time must be set.'));
+
+                return $errorResponse();
+            }
         }
 
         $communities = $data['selectedCommunities'];
@@ -221,7 +265,14 @@ final class PostController extends AbstractController
             $imageId = $fileUploader->upload($image);
         }
 
-        $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
+        if ($data['recurring']) {
+            $dateTime = $scheduleExpressionParser->getNextRunDate(
+                expression: $data['scheduler']['expression'],
+                timeZone: new DateTimeZone($data['scheduler']['timezone']),
+            );
+        } else {
+            $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
+        }
         foreach ($communities as $community) {
             $jobManager->createJob(
                 new CreatePostJob(
@@ -236,6 +287,8 @@ final class PostController extends AbstractController
                     pinToCommunity: $data['pinToCommunity'],
                     pinToInstance: $data['pinToInstance'],
                     imageId: $imageId,
+                    scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
+                    scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
                 ),
                 $dateTime,
             );

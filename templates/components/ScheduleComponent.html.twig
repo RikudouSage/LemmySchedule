@@ -1,0 +1,68 @@
+<div {{ attributes.defaults(stimulus_controller('schedule-component')) }}>
+    {% if timezoneError %}
+        {% include "notification/error.html.twig" with {
+            message: "Your browser doesn't support getting your timezone, all dates and times will be in UTC." | trans,
+        } only %}
+    {% endif %}
+
+    <div class="callout callout-warning">
+        <p>{{ "Note that recurring posts are currently in beta and might not work correctly." | trans }}</p>
+    </div>
+
+    {{ "schedule.description.every" | trans({amount: this.amount}) }}
+    <input name="scheduler[amount]" type="number" data-model="amount" min="1" max="{{ this.maxAmount }}"
+           class="form-control-sm scheduler-amount-input"/>
+    <select name="scheduler[scheduleType]" data-model="scheduleType" class="form-control-sm scheduler-type-select">
+        <option value="{{ constant('App\\Enum\\ScheduleType::Day').value }}">{{ "schedule.description.day" | trans({amount: this.amount}) }}</option>
+        <option value="{{ constant('App\\Enum\\ScheduleType::Week').value }}">{{ "schedule.description.week" | trans({amount: this.amount}) }}</option>
+        <option value="{{ constant('App\\Enum\\ScheduleType::Month').value }}">{{ "schedule.description.month" | trans({amount: this.amount}) }}</option>
+    </select>
+    {% if this.scheduleType is same as constant('App\\Enum\\ScheduleType::Week') %}
+        {{ "schedule.description.on_weekday" | trans }}
+        <select name="scheduler[weekday]" data-model="weekday" class="form-control-sm scheduler-weekday-select">
+            <option value="{{ constant('App\\Enum\\Weekday::Sunday').value }}">{{ "Sunday" | trans }}</option>
+            <option value="{{ constant('App\\Enum\\Weekday::Monday').value }}">{{ "Monday" | trans }}</option>
+            <option value="{{ constant('App\\Enum\\Weekday::Tuesday').value }}">{{ "Tuesday" | trans }}</option>
+            <option value="{{ constant('App\\Enum\\Weekday::Wednesday').value }}">{{ "Wednesday" | trans }}</option>
+            <option value="{{ constant('App\\Enum\\Weekday::Thursday').value }}">{{ "Thursday" | trans }}</option>
+            <option value="{{ constant('App\\Enum\\Weekday::Friday').value }}">{{ "Friday" | trans }}</option>
+            <option value="{{ constant('App\\Enum\\Weekday::Saturday').value }}">{{ "Saturday" | trans }}</option>
+        </select>
+    {% endif %}
+    {% if this.scheduleType is same as constant('App\\Enum\\ScheduleType::Month') %}
+        <select name="scheduler[selectedDayType]" data-model="selectedDayType" class="form-control-sm">
+            <option value="{{ constant('App\\Enum\\DayType::SpecificDay').value }}">{{ "schedule.description.on_day_of_month" | trans }}</option>
+            <option value="{{ constant('App\\Enum\\DayType::LastDay').value }}">{{ "schedule.description.on_last_day" | trans }}</option>
+        </select>
+        {% if this.selectedDayType is same as constant('App\\Enum\\DayType::SpecificDay') %}
+        <input name="scheduler[day]" type="number" data-model="day" min="1" max="31"
+               class="form-control-sm scheduler-amount-input"/>
+    {% endif %}
+    {% endif %}
+    {{ "schedule.description.at_time" | trans }}
+    <input name="scheduler[targetTime]" data-model="debounce(500)|targetTime" type="time" class="form-control-sm"/>
+    <input name="scheduler[expression]" type="hidden" value="{{ this.scheduleExpression }}"/>
+    <input name="scheduler[timezone]" type="hidden" value="{{ this.timeZone.name|default('') }}">
+
+    <br><br>
+
+    {% if this.scheduleExpression and this.nextRunTimes is not empty %}
+        <strong>{{ "Next post times:" | trans }}</strong>
+        <ul>
+            {% for time in this.nextRunTimes %}
+                <li>
+                    {{ time | format_date_time }}
+                    {% if app.debug %}
+                        - <strong>
+                        {{ "Timezone" | trans }}:
+                        {% if (this.timeZone | timezone_offset).positive %}+{% endif %}{{ this.timeZone | timezone_offset }})
+                        {{ this.timeZone.name }}
+                        </strong>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        {{ "The schedule is not valid." | trans }}
+    {% endif %}
+</div>

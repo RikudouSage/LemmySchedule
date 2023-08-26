@@ -6,6 +6,10 @@ use App\Authentication\User;
 use App\FileProvider\FileProvider;
 use App\Job\CreatePostJob;
 use App\Lemmy\LemmyApiFactory;
+use App\Service\CurrentUserService;
+use App\Service\JobManager;
+use App\Service\ScheduleExpressionParser;
+use DateTimeZone;
 use Rikudou\LemmyApi\Enum\PostFeatureType;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -16,6 +20,9 @@ final readonly class CreatePostJobHandler
     public function __construct(
         private LemmyApiFactory $apiFactory,
         private FileProvider $fileProvider,
+        private ScheduleExpressionParser $scheduleExpressionParser,
+        private JobManager $jobManager,
+        private CurrentUserService $currentUserService,
     ) {
     }
 
@@ -47,6 +54,20 @@ final readonly class CreatePostJobHandler
             } catch (LemmyApiException) {
                 // ignore it, user probably doesn't have the permission to do that
             }
+        }
+
+        if ($expression = $job->scheduleExpression) {
+            sleep(1);
+            assert($job->scheduleTimezone !== null);
+            $me = $api->site()->getSite()->myUser?->localUserView->person;
+            if ($me !== null) {
+                $this->currentUserService->setCurrentUser(new User($me->name, $job->instance, $job->jwt));
+            }
+            $nextDate = $this->scheduleExpressionParser->getNextRunDate(
+                expression: $expression,
+                timeZone: new DateTimeZone($job->scheduleTimezone),
+            );
+            $this->jobManager->createJob($job, $nextDate);
         }
     }
 }

@@ -20,6 +20,8 @@ final readonly class CreatePostJob
         public bool $pinToCommunity = false,
         public bool $pinToInstance = false,
         public ?Uuid $imageId = null,
+        public ?string $scheduleExpression = null,
+        public ?string $scheduleTimezone = null,
     ) {
     }
 
@@ -31,6 +33,8 @@ final readonly class CreatePostJob
         $data['pinToCommunity'] ??= false;
         $data['pinToInstance'] ??= false;
         $data['imageId'] ??= null;
+        $data['scheduleExpression'] ??= null;
+        $data['scheduleTimezone'] ??= null;
 
         foreach ($data as $property => $value) {
             $this->{$property} = $value;

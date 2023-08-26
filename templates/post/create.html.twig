@@ -6,7 +6,8 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
-                <form method="post" enctype="multipart/form-data" action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post') }}>
+                <form method="post" enctype="multipart/form-data"
+                      action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post') }}>
                     <div class="form-group">
                         <label for="inputTitle">{{ "Title" | trans }}</label>
                         <input id="inputTitle" class="form-control" type="text" name="title"
@@ -29,7 +30,7 @@
                     </div>
                     <div class="form-group">
                         <label for="file">{{ "Image" | trans }}</label>
-                        <input id="file" accept="image/*" class="form-control" type="file" name="image" />
+                        <input id="file" accept="image/*" class="form-control" type="file" name="image"/>
                     </div>
                     <div class="form-group">
                         <label for="inputLanguage">{{ "Language" | trans }}</label>
@@ -75,13 +76,34 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="hidden" name="recurring" value="0" />
+                            <input class="custom-control-input" type="checkbox"
+                                   value="1" {% if recurring|default(false) %}checked{% endif %}
+                                   id="inputRecurring" {{ stimulus_action('create-post', 'toggleRecurring') }}
+                                   name="recurring" {{ stimulus_target('create-post', 'recurringScheduleSwitch') }} />
+                            <label for="inputRecurring" class="custom-control-label">{{ "Recurring?" | trans }}</label>
+                        </div>
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post', 'oneTimeSchedule') }}>
                         <label for="inputScheduleDateTime">{{ "When do you want to post?" | trans }}</label>
                         <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
-                               type="datetime-local" required value="{{ scheduleDateTime|default('') }}"/>
-                        <input type="hidden"
-                               name="timezoneOffset" {{ stimulus_target('create-post', 'timezoneOffset') }} />
+                               type="datetime-local" value="{{ scheduleDateTime|default('') }}"/>
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post', 'recurringSchedule') }}>
+                        <label>{{ "When do you want to post?" | trans }}</label>
+                        <div>
+                            {{ component('ScheduleComponent', {
+                                amount: scheduler.amount|default(1),
+                                scheduleType: scheduler.scheduleType|default(constant('App\\Enum\\ScheduleType::Day')),
+                                selectedDayType: scheduler.selectedDayType|default(constant('App\\Enum\\DayType::SpecificDay')),
+                                day: scheduler.day|default(1),
+                                weekday: scheduler.weekday|default(constant('App\\Enum\\Weekday::Monday')),
+                            }) }}
+                        </div>
                     </div>
 
+                    <input type="hidden" name="timezoneOffset" {{ stimulus_target('create-post', 'timezoneOffset') }} />
                     <button class="btn btn-primary" type="submit">
                         {{ "Schedule" | trans }}
                     </button>

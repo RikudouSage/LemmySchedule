@@ -47,6 +47,7 @@ provider:
         MESSENGER_TRANSPORT_DSN: eb://LemmySchedule
         S3_FILE_UPLOADER_BUCKET: !Ref UploadsBucket
         FILE_UPLOADER_CLASS: App\FileUploader\S3FileUploader
+        ROLE_ARN: !GetAtt EventBridgeRole.Arn
 
 plugins:
   - ./vendor/bref/bref
@@ -65,7 +66,6 @@ functions:
         memorySize: 256
         environment:
             CONSOLE_FUNCTION: !GetAtt ConsoleLambdaFunction.Arn
-            ROLE_ARN: !GetAtt EventBridgeRole.Arn
         layers:
             - ${bref:layer.php-82-fpm}
         events:

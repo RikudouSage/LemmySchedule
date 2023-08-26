@@ -15,6 +15,7 @@
                         <th>{{ "Title" | trans }}</th>
                         <th>{{ "Community" | trans }}</th>
                         <th>{{ "Scheduled at" | trans }}</th>
+                        <th>{{ "Recurring" | trans }}</th>
                         <th>{{ "Cancel" | trans }}</th>
                     </tr>
                     </thead>
@@ -39,6 +40,7 @@
                             </td>
                             <td>{{ job.community }}</td>
                             <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
+                            <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
                             <td>
                                 <button class="btn btn-danger" type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
                                     {{ "Cancel" | trans }}

@@ -35,6 +35,8 @@ final class RunJobSynchronously extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        putenv('CONSOLE_FUNCTION=' . $_ENV['AWS_LAMBDA_FUNCTION_NAME'] ?? getenv('AWS_LAMBDA_FUNCTION_NAME'));
+
         $job = $input->getArgument('serialized-job');
         assert(is_string($job));
         $job = base64_decode($job);

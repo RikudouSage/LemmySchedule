@@ -1,0 +1,20 @@
+schedule.description.every: Every
+schedule.description.day: >-
+  {amount, plural,
+    one {day}
+    other {days}
+  }
+schedule.description.week: >-
+  {amount, plural,
+    one {week}
+    other {weeks}
+  }
+schedule.description.month: >-
+  {amount, plural,
+    one {month}
+    other {months}
+  }
+schedule.description.on_weekday: on
+schedule.description.at_time: at
+schedule.description.on_day_of_month: on day
+schedule.description.on_last_day: on last day of month

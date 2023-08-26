@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Authentication\User;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 
 final readonly class CurrentUserService
 {
@@ -20,5 +21,10 @@ final readonly class CurrentUserService
         }
 
         return $user;
+    }
+
+    public function setCurrentUser(User $user): void
+    {
+        $this->tokenStorage->setToken(new UsernamePasswordToken($user, 'main', $user->getRoles()));
     }
 }
