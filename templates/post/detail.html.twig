@@ -65,6 +65,10 @@
                         <td>{{ job.pinToCommunity ? 'Yes' | trans : 'No' | trans }}</td>
                     </tr>
                     <tr>
+                        <td><strong>{{ "Pin to instance" | trans }}</strong></td>
+                        <td>{{ job.pinToInstance ? 'Yes' | trans : 'No' | trans }}</td>
+                    </tr>
+                    <tr>
                         <td><strong>{{ "Unpin at" | trans }}</strong></td>
                         <td>{{ job.unpinAt ? job.unpinAt | format_date_time : '<code>N/A</code>' | raw }}</td>
                     </tr>

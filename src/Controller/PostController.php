@@ -140,6 +140,7 @@ final class PostController extends AbstractController
             'community' => sprintf('!%s@%s', $message->community->name, parse_url($message->community->actorId, PHP_URL_HOST)),
             'nsfw' => $message->nsfw,
             'pinToCommunity' => $message->pinToCommunity,
+            'pinToInstance' => $message->pinToInstance,
             'language' => $message->language,
             'image' => $message->imageId,
             'recurring' => $message->scheduleExpression !== null,
