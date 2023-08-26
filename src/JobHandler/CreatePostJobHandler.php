@@ -3,8 +3,10 @@
 namespace App\JobHandler;
 
 use App\Authentication\User;
+use App\Enum\PinType;
 use App\FileProvider\FileProvider;
 use App\Job\CreatePostJob;
+use App\Job\PinUnpinPostJobV2;
 use App\Lemmy\LemmyApiFactory;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
@@ -68,6 +70,18 @@ final readonly class CreatePostJobHandler
                 timeZone: new DateTimeZone($job->scheduleTimezone),
             );
             $this->jobManager->createJob($job, $nextDate);
+        }
+        if ($unpinAt = $job->unpinAt) {
+            $me = $api->site()->getSite()->myUser?->localUserView->person;
+            if ($me !== null) {
+                $this->currentUserService->setCurrentUser(new User($me->name, $job->instance, $job->jwt));
+            }
+            $this->jobManager->createJob(new PinUnpinPostJobV2(
+                postId: $post->post->id,
+                jwt: $job->jwt,
+                instance: $job->instance,
+                pin: $job->pinToCommunity ? PinType::UnpinFromCommunity : PinType::UnpinFromInstance,
+            ), $unpinAt);
         }
     }
 }

@@ -193,6 +193,8 @@ final class PostController extends AbstractController
             'selectedLanguage' => Language::tryFrom($request->request->getInt('language')) ?? Language::Undetermined,
             'scheduler' => $request->request->all('scheduler'),
             'recurring' => $request->request->getBoolean('recurring'),
+            'scheduleUnpin' => $request->request->getBoolean('scheduleUnpin'),
+            'scheduleUnpinDateTime' => $request->request->get('scheduleUnpinDateTime'),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -242,6 +244,11 @@ final class PostController extends AbstractController
                 return $errorResponse();
             }
         }
+        if (($data['pinToInstance'] || $data['pinToCommunity']) && $data['scheduleUnpin'] && !$data['scheduleUnpinDateTime']) {
+            $this->addFlash('error', $translator->trans("You selected scheduling of unpin, but you didn't specify a date and time for the unpin."));
+
+            return $errorResponse();
+        }
 
         $communities = $data['selectedCommunities'];
         $communities = array_map(static function (string $community) {
@@ -289,6 +296,7 @@ final class PostController extends AbstractController
                     imageId: $imageId,
                     scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
                     scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
+                    unpinAt: $data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null,
                 ),
                 $dateTime,
             );

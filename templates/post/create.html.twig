@@ -58,8 +58,10 @@
                     <div class="form-group">
                         <div class="custom-control custom-switch">
                             <input class="custom-control-input" type="checkbox" id="inputPinToCommunity"
-                                   name="pinToCommunity"
-                                   {% if pinToCommunity|default(false) %}checked{% endif %} />
+                                   name="pinToCommunity" {{ stimulus_target('create-post', 'pinToCommunitySwitch') }}
+                                   {% if pinToCommunity|default(false) %}checked{% endif %}
+                                   {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
+                            />
                             <label for="inputPinToCommunity"
                                    class="custom-control-label">{{ "Pin to community" | trans }}</label>
                             <small>({{ "note that you must be a mod for this to work" | trans }})</small>
@@ -68,12 +70,30 @@
                     <div class="form-group">
                         <div class="custom-control custom-switch">
                             <input class="custom-control-input" type="checkbox" id="inputPinToInstance"
-                                   name="pinToInstance"
-                                   {% if pinToInstance|default(false) %}checked{% endif %} />
+                                   name="pinToInstance" {{ stimulus_target('create-post', 'pinToInstanceSwitch') }}
+                                   {% if pinToInstance|default(false) %}checked{% endif %}
+                                   {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
+                            />
                             <label for="inputPinToInstance"
                                    class="custom-control-label">{{ "Pin to instance" | trans }}</label>
                             <small>({{ "note that you must be an admin for this to work" | trans }})</small>
                         </div>
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post', 'scheduleUnpinSwitchWrapper') }}>
+                        <div class="custom-control custom-switch custom-switch-on-danger">
+                            <input class="custom-control-input" type="checkbox" id="inputScheduleUnpin"
+                                   name="scheduleUnpin" {{ stimulus_target('create-post', 'scheduleUnpinSwitch') }}
+                                   {% if scheduleUnpin|default(false) %}checked{% endif %}
+                                   {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
+                            />
+                            <label for="inputScheduleUnpin"
+                                   class="custom-control-label">{{ "Schedule unpin" | trans }}</label>
+                        </div>
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post', 'scheduleUnpinWrapper') }}>
+                        <label for="inputScheduleUnpinDateTime">{{ "When do you want to unpin the post?" | trans }}</label>
+                        <input class="form-control" id="inputScheduleUnpinDateTime" name="scheduleUnpinDateTime"
+                               type="datetime-local" value="{{ scheduleUnpin|default('') }}"/>
                     </div>
                     <div class="form-group">
                         <div class="custom-control custom-switch">

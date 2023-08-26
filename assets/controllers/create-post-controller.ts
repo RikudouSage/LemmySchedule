@@ -10,6 +10,11 @@ export default class extends Controller {
         'recurringScheduleSwitch',
         'oneTimeSchedule',
         'recurringSchedule',
+        'scheduleUnpinSwitchWrapper',
+        'pinToCommunitySwitch',
+        'pinToInstanceSwitch',
+        'scheduleUnpinSwitch',
+        'scheduleUnpinWrapper',
     ];
 
     private timezoneOffsetTarget: HTMLInputElement;
@@ -18,6 +23,11 @@ export default class extends Controller {
     private recurringScheduleSwitchTarget: HTMLInputElement;
     private oneTimeScheduleTarget: HTMLDivElement;
     private recurringScheduleTarget: HTMLDivElement;
+    private scheduleUnpinSwitchWrapperTarget: HTMLDivElement;
+    private pinToCommunitySwitchTarget: HTMLInputElement;
+    private pinToInstanceSwitchTarget: HTMLInputElement;
+    private scheduleUnpinSwitchTarget: HTMLInputElement;
+    private scheduleUnpinWrapperTarget: HTMLDivElement;
 
     public async connect(): Promise<void> {
         this.timezoneOffsetTarget.value = DateHelper.getTimezoneOffset();
@@ -32,6 +42,7 @@ export default class extends Controller {
         });
 
         await this.toggleRecurring();
+        await this.toggleScheduleUnpinSwitch();
     }
 
     public async toggleRecurring(): Promise<void> {
@@ -42,5 +53,10 @@ export default class extends Controller {
             this.oneTimeScheduleTarget.hidden = false;
             this.recurringScheduleTarget.hidden = true;
         }
+    }
+
+    public async toggleScheduleUnpinSwitch(): Promise<void> {
+        this.scheduleUnpinSwitchWrapperTarget.hidden = !(this.pinToCommunitySwitchTarget.checked || this.pinToInstanceSwitchTarget.checked);
+        this.scheduleUnpinWrapperTarget.hidden = !(!this.scheduleUnpinSwitchWrapperTarget.hidden && this.scheduleUnpinSwitchTarget.checked);
     }
 }

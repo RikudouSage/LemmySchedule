@@ -2,6 +2,7 @@
 
 namespace App\Job;
 
+use DateTimeInterface;
 use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Component\Uid\Uuid;
@@ -22,6 +23,7 @@ final readonly class CreatePostJob
         public ?Uuid $imageId = null,
         public ?string $scheduleExpression = null,
         public ?string $scheduleTimezone = null,
+        public ?DateTimeInterface $unpinAt = null,
     ) {
     }
 
@@ -35,6 +37,7 @@ final readonly class CreatePostJob
         $data['imageId'] ??= null;
         $data['scheduleExpression'] ??= null;
         $data['scheduleTimezone'] ??= null;
+        $data['unpinAt'] ??= null;
 
         foreach ($data as $property => $value) {
             $this->{$property} = $value;
