@@ -149,6 +149,7 @@ final class PostController extends AbstractController
                 $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 2, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
                 $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 3, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
             ] : null,
+            'unpinAt' => $message->unpinAt,
         ];
 
         return $this->render('post/detail.html.twig', [
