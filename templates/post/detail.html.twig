@@ -70,7 +70,11 @@
                     </tr>
                     <tr>
                         <td><strong>{{ "Unpin at" | trans }}</strong></td>
-                        <td>{{ job.unpinAt ? job.unpinAt | format_date_time : '<code>N/A</code>' | raw }}</td>
+                        {% if job.unpinAt %}
+                            <td {{ stimulus_controller('local-date-time') }}>{{ job.unpinAt | date('c') }}</td>
+                        {% else %}
+                            <td><code>N/A</code></td>
+                        {% endif %}
                     </tr>
                     <tr>
                         <td><strong>{{ "Language" | trans }}</strong></td>
