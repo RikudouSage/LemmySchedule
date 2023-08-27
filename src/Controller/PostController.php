@@ -23,6 +23,7 @@ use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
 use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
+use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -265,6 +266,36 @@ final class PostController extends AbstractController
             $communities = array_map(static fn (string $community) => $api->community()->get($community), $communities);
         } catch (LemmyApiException) {
             $this->addFlash('error', $translator->trans("Couldn't find one or more of the communities, are you sure all of them exist?"));
+
+            return $errorResponse();
+        }
+
+        $selectedLanguage = $data['selectedLanguage'];
+
+        $site = $api->site()->getSite();
+        $instanceLanguages = $site->discussionLanguages;
+        $communityLanguages = array_map(
+            static fn (Community $community) => array_map(
+                static fn (Language $language) => $language->value,
+                $api->community()->getLanguages($community),
+            ),
+            $communities,
+        );
+        $communityLanguages = array_map(static fn (int $language) => Language::from($language), array_intersect(...$communityLanguages));
+        $userLanguages = $site->myUser?->discussionLanguages ?? null;
+
+        if (count($instanceLanguages) && !in_array($selectedLanguage, $instanceLanguages, true)) {
+            $this->addFlash('error', $translator->trans('The language you have selected is not supported by the target instance.'));
+
+            return $errorResponse();
+        }
+        if (count($communityLanguages) && !in_array($selectedLanguage, $communityLanguages, true)) {
+            $this->addFlash('error', $translator->trans('The language you have selected is not supported by one or more of the communities you have selected.'));
+
+            return $errorResponse();
+        }
+        if ($userLanguages !== null && count($userLanguages) && !in_array($selectedLanguage, $userLanguages, true)) {
+            $this->addFlash('error', $translator->trans('The language is not supported by your user.'));
 
             return $errorResponse();
         }
