@@ -74,6 +74,7 @@ final class PostController extends AbstractController
                 'recurring' => $message->scheduleExpression !== null,
             ];
         }, $postCreateJobs);
+        usort($postCreateJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
 
         $postPinJobs = array_filter($jobManager->listJobs(), static function (Envelope $envelope) use ($jobManager) {
             $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
@@ -108,6 +109,7 @@ final class PostController extends AbstractController
                     : $message->pin,
             ];
         }, $postPinJobs);
+        usort($postPinJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
 
         return $this->render('post/list.html.twig', [
             'postCreateJobs' => $postCreateJobs,
