@@ -22,7 +22,10 @@ RUN a2enmod rewrite
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/99-custom.ini
 COPY --chown=33:33 . /var/www/html
-RUN mkdir /opt/{runtime-cache,logs,uploaded-files} && chown 33:33 /opt/* && \
+RUN mkdir /opt/runtime-cache && \
+    mkdir /opt/logs && \
+    mkdir /opt/uploaded-files && \
+    chown 33:33 /opt/* && \
     chmod +x /var/www/html/docker/entrypoint.bash
 
 ENTRYPOINT /var/www/html/docker/entrypoint.bash
