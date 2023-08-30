@@ -10,6 +10,7 @@ final readonly class LemmyverseInstanceListProvider implements InstanceListProvi
 
     public function __construct(
         private CacheItemPoolInterface $cache,
+        private string $defaultInstance,
     ) {
     }
 
@@ -22,8 +23,11 @@ final readonly class LemmyverseInstanceListProvider implements InstanceListProvi
     {
         $result = $this->cache->getItem(self::CACHE_ITEM_NAME)->get();
         assert(is_array($result));
-        $result[] = 'lemmy.world';
+        $result[] = 'lemmy.world'; // temporary
 
-        return array_unique($result);
+        return array_unique([
+            $this->defaultInstance,
+            ...$result,
+        ]);
     }
 }

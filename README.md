@@ -190,7 +190,6 @@ Other variables which might need changing:
 Some permanent files are accessible at these locations:
 
 - `/opt/runtime-cache` - used for storing configuration etc., **MUST be bound to a volume**
-- `/opt/logs` - application logs, whether you want to bind them or not is up to you, it's not necessary
 - `/opt/uploaded-files` - directory for uploaded images, **MUST be bound to a volume**
 
 ### Ports

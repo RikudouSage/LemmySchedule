@@ -2,7 +2,6 @@ FROM php:8.2-apache
 
 ENV APP_ENV prod
 ENV APP_CACHE_DIR=/opt/runtime-cache
-ENV APP_LOG_DIR=/opt/logs
 ENV LOCAL_FILE_UPLOADER_PATH /opt/uploaded-files
 ENV MESSENGER_TRANSPORT_DSN=redis://redis:6379/lemmy_schedule_jobs
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
