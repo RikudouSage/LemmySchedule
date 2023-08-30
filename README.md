@@ -208,3 +208,32 @@ If you have a Redis instance under different URL
 - `docker run -d -it -p 8000:80 -v files:/opt/uploaded-files -v cache:/opt/runtime-cache -e DEFAULT_INSTANCE=my.instance.tld -e APP_SECRET=5d640026bb762a0e874c1e1f2656e079 -e MESSENGER_TRANSPORT_DSN=redis://redis.example.com/lemmy_schedule ghcr.io/rikudousage/lemmy-schedule:latest`
 
 #### Docker compose
+
+You can easily run the app using docker compose like so:
+
+```yaml
+version: "3.7"
+
+services:
+  redis:
+    image: redis
+    hostname: redis
+    command: redis-server --save 60 1 --loglevel warning # make Redis dump the contents to disk and restore them on start
+    volumes:
+      - redis_data:/data
+  lemmy_schedule:
+    image: ghcr.io/rikudousage/lemmy-schedule:latest
+    ports:
+      - "8000:80" # replace 8000 with the port you want your app to run on
+    environment:
+      APP_SECRET: $APP_SECRET # actually create the secret, don't just use this value
+      DEFAULT_INSTANCE: my.instance.tld
+    volumes:
+      - ./volumes/lemmy-schedule-cache:/opt/runtime-cache
+      - ./volumes/lemmy-schedule-uploads:/opt/uploaded-files
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+```

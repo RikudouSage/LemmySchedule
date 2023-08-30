@@ -3,8 +3,8 @@ name: Publish docker
 on:
   workflow_dispatch:
   push:
-#    branches:
-#      - master
+    branches:
+      - master
 
 jobs:
   publish:
