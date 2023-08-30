@@ -193,3 +193,19 @@ Some permanent files are accessible at these locations:
 - `/opt/logs` - application logs, whether you want to bind them or not is up to you, it's not necessary
 - `/opt/uploaded-files` - directory for uploaded images, **MUST be bound to a volume**
 
+### Ports
+
+The app runs on port 80 inside the container, bind the port to any port you want.
+
+### Running
+
+Taking the above into account, here is a docker command used for the production build (replace the `APP_SECRET`):
+
+- `docker run -d -it -p 8000:80 -v files:/opt/uploaded-files -v cache:/opt/runtime-cache -e DEFAULT_INSTANCE=my.instance.tld -e APP_SECRET=5d640026bb762a0e874c1e1f2656e079 ghcr.io/rikudousage/lemmy-schedule:latest`
+
+If you have a Redis instance under different URL
+(replace `redis.example.com` with your hostname and `lemmy_schedule` with the Redis key you want to use):
+
+- `docker run -d -it -p 8000:80 -v files:/opt/uploaded-files -v cache:/opt/runtime-cache -e DEFAULT_INSTANCE=my.instance.tld -e APP_SECRET=5d640026bb762a0e874c1e1f2656e079 -e MESSENGER_TRANSPORT_DSN=redis://redis.example.com/lemmy_schedule ghcr.io/rikudousage/lemmy-schedule:latest`
+
+#### Docker compose

@@ -1,0 +1,23 @@
+version: "3.7"
+
+services:
+  redis:
+    image: redis
+    hostname: redis
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+  lemmy_schedule:
+    image: ghcr.io/rikudousage/lemmy-schedule:latest
+    ports:
+      - "8000:80"
+    environment:
+      APP_SECRET: $APP_SECRET # actually create the secret, don't just use this value
+      DEFAULT_INSTANCE: lemmy.ml
+    volumes:
+      - ./volumes/lemmy-schedule-cache:/opt/runtime-cache
+      - ./volumes/lemmy-schedule-uploads:/opt/uploaded-files
+#      - ./volumes/lemmy-schedule-logs:/opt/logs # optional
+
+volumes:
+  redis_data:
