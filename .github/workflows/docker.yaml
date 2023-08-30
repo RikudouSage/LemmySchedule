@@ -29,7 +29,7 @@ jobs:
       - name: Pull existing image
         run: |
           docker pull ghcr.io/rikudousage/lemmy-schedule:latest || true
-          docker pull $(grep -ioP '(?<=^from)\s+\S+' Dockerfile)
+          docker pull $(grep -ioP '(?<=^from)\s+\S+' docker/Dockerfile)
       - name: Build docker
         run: docker build -f docker/Dockerfile --cache-from ghcr.io/rikudousage/lemmy-schedule:latest -t ghcr.io/rikudousage/lemmy-schedule:latest --label "org.opencontainers.image.source=https://github.com/RikudouSage/LemmySchedule/" --label "org.opencontainers.image.licenses=MIT" .
       - name: Login to GHCR
