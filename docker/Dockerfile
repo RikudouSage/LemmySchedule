@@ -1,7 +1,10 @@
 FROM php:8.2-apache
 
+ENV APP_ENV prod
 ENV APP_CACHE_DIR=/opt/runtime-cache
 ENV APP_LOG_DIR=/opt/logs
+ENV LOCAL_FILE_UPLOADER_PATH /opt/uploaded-files
+ENV MESSENGER_TRANSPORT_DSN=redis://redis:6379/lemmy_schedule_jobs
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
 EXPOSE 80
@@ -18,6 +21,7 @@ RUN pecl install redis && \
 RUN a2enmod rewrite
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/99-custom.ini
-COPY . /var/www/html
+COPY --chown=33:33 . /var/www/html
+RUN mkdir /opt/{runtime-cache,logs,uploaded-files} && chown 33:33 /opt/*
 
-ENTRYPOINT /var/www/html/docker/prod/entrypoint.bash
+ENTRYPOINT /var/www/html/docker/entrypoint.bash

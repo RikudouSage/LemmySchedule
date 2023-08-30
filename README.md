@@ -165,3 +165,31 @@ You need to set these environment variables (as real environment variables, not 
 
 If everything works out,
 you should be able to visit the domain which you specified in `DOMAIN_NAME` and the app should be running there!
+
+## Self-hosting - docker
+
+### Configuration
+
+You need to configure these variables:
+
+- `APP_SECRET` - a random string around 32 characters length
+  - you can use, for example, this command to generate one: `hexdump -vn16 -e'4/4 "%08x" 1 "\n"' /dev/urandom`
+
+Other variables which might need changing:
+
+- `DEFAULT_INSTANCE` - set this to your preferred instance, otherwise the default `lemmings.world` will be used
+- `MESSENGER_TRANSPORT_DSN` - the transport name is by default set to expect a container with hostname `redis`,
+  you might need to change this if your setup is different
+  - Read the [documentation on the transport](#job-transports) in this README
+- `APP_ENV` - you might want to change this to `dev` if you're debugging the app, otherwise leave it out (or set to `prod`)
+- `FILE_UPLOADER_CLASS` - you may want to change how uploaded files are handled
+  - Read the [documentation on uploading files](#file-uploading) in this README
+
+### Volumes
+
+Some permanent files are accessible at these locations:
+
+- `/opt/runtime-cache` - used for storing configuration etc., **MUST be bound to a volume**
+- `/opt/logs` - application logs, whether you want to bind them or not is up to you, it's not necessary
+- `/opt/uploaded-files` - directory for uploaded images, **MUST be bound to a volume**
+
