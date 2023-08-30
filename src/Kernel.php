@@ -24,4 +24,22 @@ class Kernel extends BrefKernel
 
         return $this->getProjectDir() . '/var/cache/' . $this->environment;
     }
+
+    public function getCacheDir(): string
+    {
+        if ($dir = getenv('APP_CACHE_DIR')) {
+            return $dir;
+        }
+
+        return parent::getCacheDir();
+    }
+
+    public function getLogDir(): string
+    {
+        if ($dir = getenv('APP_LOG_DIR')) {
+            return $dir;
+        }
+
+        return parent::getLogDir();
+    }
 }

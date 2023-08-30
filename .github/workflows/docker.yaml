@@ -22,10 +22,12 @@ jobs:
         run: yarn install
       - name: Build assets
         run: yarn build
+      - name: Remove unneeded files
+        run: rm -rf config/packages/prod/rikudou_dynamo_db_cache.yaml config/services_prod.yaml
       - name: Prepare cache
         run: ./bin/console cache:warmup --env=prod
       - name: Build docker
-        run: docker build -f docker/Dockerfile -t ghcr.io/rikudousage/lemmy-schedule:latest --label "org.opencontainers.image.source=https://github.com/RikudouSage/LemmySchedule/" --label "org.opencontainers.image.licenses=MIT" .
+        run: docker build -f docker/Dockerfile --cache-from ghcr.io/rikudousage/lemmy-schedule:latest -t ghcr.io/rikudousage/lemmy-schedule:latest --label "org.opencontainers.image.source=https://github.com/RikudouSage/LemmySchedule/" --label "org.opencontainers.image.licenses=MIT" .
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
