@@ -3,8 +3,8 @@ name: Publish docker
 on:
   workflow_dispatch:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
 
 jobs:
   publish:
@@ -22,6 +22,8 @@ jobs:
         run: yarn install
       - name: Build assets
         run: yarn build
+      - name: Remove unneeded files
+        run: rm -rf config/packages/prod/rikudou_dynamo_db_cache.yaml
       - name: Prepare cache
         run: ./bin/console cache:warmup --env=prod
       - name: Build docker

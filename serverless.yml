@@ -6,7 +6,7 @@ provider:
     # The AWS region in which to deploy (us-east-1 is the default)
     region: eu-central-1
     # The stage of the application, e.g. dev, production, staging… ('dev' is the default)
-    stage: ${opt:stage, 'dev'}
+    stage: ${opt:stage, 'prod'}
     runtime: provided.al2
     iam:
         role:
