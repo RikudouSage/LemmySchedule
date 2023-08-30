@@ -4,6 +4,30 @@ An app that makes it possible to schedule posts on Lemmy.
 
 > Am I the only one who thinks it's funny how the name "Lemmy Schedule" sounds like "let me schedule"?
 
+<!-- TOC -->
+* [Lemmy Schedule](#lemmy-schedule)
+  * [Interesting parts](#interesting-parts)
+  * [How it works?](#how-it-works)
+  * [Building the app locally](#building-the-app-locally)
+    * [Prerequisites](#prerequisites)
+    * [Configuring](#configuring)
+      * [Job transports](#job-transports)
+      * [File uploading](#file-uploading)
+      * [Cache](#cache)
+    * [Building](#building)
+    * [Running](#running)
+  * [Self-hosting - AWS](#self-hosting---aws)
+    * [Prerequisites:](#prerequisites-1)
+    * [Environment variables](#environment-variables)
+    * [Deploying](#deploying)
+  * [Self-hosting - docker](#self-hosting---docker)
+    * [Configuration](#configuration)
+    * [Volumes](#volumes)
+    * [Ports](#ports)
+    * [Running](#running-1)
+      * [Docker compose](#docker-compose)
+<!-- TOC -->
+
 ## Interesting parts
 
 - [AppAuthenticator](src/Authentication/AppAuthenticator.php) - the authentication process, here you can make sure
