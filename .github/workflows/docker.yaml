@@ -1,0 +1,30 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup php dependencies
+        run: composer install --no-dev --no-scripts
+      - name: Setup js dependencies
+        run: yarn install
+      - name: Build assets
+        run: yarn build
+      - name: Prepare cache
+        run: ./bin/console cache:warmup --env=prod
+      - name: Build docker
+        run: docker build -f docker/Dockerfile -t ghcr.io/RikudouSage/LemmySchedule:latest --label "org.opencontainers.image.source=https://github.com/RikudouSage/LemmySchedule/" .
+      - name: Push to docker
+        run: docker push ghcr.io/RikudouSage/LemmySchedule:latest
