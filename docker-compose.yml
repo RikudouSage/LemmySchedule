@@ -18,6 +18,8 @@ services:
       - ./volumes/lemmy-schedule-cache:/opt/runtime-cache
       - ./volumes/lemmy-schedule-uploads:/opt/uploaded-files
 #      - ./volumes/lemmy-schedule-logs:/opt/logs # optional
+    depends_on:
+      - redis
 
 volumes:
   redis_data:
