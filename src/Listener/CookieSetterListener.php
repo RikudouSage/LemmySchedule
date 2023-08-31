@@ -24,7 +24,9 @@ final class CookieSetterListener implements EventSubscriberInterface
     public function onResponse(ResponseEvent $event): void
     {
         $cookies = $this->cookieSetter->getCookies();
-        if (!count($cookies)) {
+        $cookiesToRemove = $this->cookieSetter->getCookiesToRemove();
+
+        if (!count($cookies) && !count($cookiesToRemove)) {
             return;
         }
 
@@ -32,6 +34,10 @@ final class CookieSetterListener implements EventSubscriberInterface
         foreach ($cookies as $cookie) {
             $response->headers->setCookie($cookie);
         }
+        foreach ($cookiesToRemove as $cookie) {
+            $response->headers->clearCookie($cookie);
+        }
+
         $event->setResponse($response);
     }
 }

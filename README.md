@@ -96,6 +96,7 @@ in `.env.local` file.
 | `S3_FILE_UPLOADER_BUCKET`  | the bucket to use for storing files temporarily, only used if file uploader is set to AWS S3                                                        |                                                      | no           |
 | `APP_CACHE_DIR`            | the directory for storing cache, it should be some permanent directory                                                                              |                                                      | no           |
 | `APP_LOG_DIR`              | the directory for storing logs                                                                                                                      |                                                      | no           |
+| `SINGLE_INSTANCE_MODE`     | set to either 1 or 0, 1 means that only users from the instance specified in `DEFAULT_INSTANCE` can log in                                          | 0                                                    | **yes**      |
 
 #### Job transports
 
@@ -180,6 +181,10 @@ You need to set these environment variables (as real environment variables, not 
 - `DOMAIN_NAME`
 - `DOMAIN_ZONE` - the zone ID of the Route53 domain
 
+You may set these environment variables as well (as real environment variables, not as part of .env.local):
+
+- `SINGLE_INSTANCE_MODE`
+
 ### Deploying
 
 - Follow the guide on [building](#building)
@@ -208,6 +213,8 @@ Other variables which might need changing:
 - `APP_ENV` - you might want to change this to `dev` if you're debugging the app, otherwise leave it out (or set to `prod`)
 - `FILE_UPLOADER_CLASS` - you may want to change how uploaded files are handled
   - Read the [documentation on uploading files](#file-uploading) in this README
+- `SINGLE_INSTANCE_MODE` - set to 1 if you want to run in single instance mode where only people from instance set in
+  `DEFAULT_INSTANCE` can log in
 
 ### Volumes
 

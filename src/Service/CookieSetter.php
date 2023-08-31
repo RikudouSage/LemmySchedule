@@ -14,9 +14,19 @@ final class CookieSetter
      */
     private array $cookies = [];
 
+    /**
+     * @var array<string>
+     */
+    private array $cookiesToRemove = [];
+
     public function setCookie(Cookie $cookie): void
     {
         $this->cookies[$cookie->getName()] = $cookie;
+    }
+
+    public function removeCookie(string $name): void
+    {
+        $this->cookiesToRemove[] = $name;
     }
 
     /**
@@ -25,5 +35,13 @@ final class CookieSetter
     public function getCookies(): array
     {
         return $this->cookies;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getCookiesToRemove(): array
+    {
+        return $this->cookiesToRemove;
     }
 }

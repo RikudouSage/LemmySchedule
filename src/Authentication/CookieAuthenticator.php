@@ -2,22 +2,29 @@
 
 namespace App\Authentication;
 
+use App\Service\CookieSetter;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class CookieAuthenticator extends AbstractAuthenticator
 {
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly TranslatorInterface $translator,
+        private readonly CookieSetter $cookieSetter,
+        private readonly string $defaultInstance,
+        private readonly bool $singleInstanceMode,
     ) {
     }
 
@@ -31,6 +38,14 @@ final class CookieAuthenticator extends AbstractAuthenticator
         $cookie = $request->cookies->get(UserProvider::COOKIE_NAME);
         assert(is_string($cookie));
         $value = json_decode($cookie, true, JSON_THROW_ON_ERROR);
+        $instance = $value['instance'] ?? '';
+
+        if ($this->singleInstanceMode && $instance !== $this->defaultInstance) {
+            $this->cookieSetter->removeCookie(UserProvider::COOKIE_NAME);
+            throw new CustomUserMessageAuthenticationException($this->translator->trans('Using this app you can only log in to the {instance} instance', [
+                '{instance}' => $this->defaultInstance,
+            ]));
+        }
 
         return new SelfValidatingPassport(
             new UserBadge(

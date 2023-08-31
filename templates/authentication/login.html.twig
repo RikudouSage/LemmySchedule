@@ -10,15 +10,19 @@
             </div>
             <div class="card-body">
                 <form method="post" {{ stimulus_controller('login') }}>
-                    <div class="form-group">
-                        <label for="inputInstance">{{ "Instance" | trans }}</label>
-                        <select id="inputInstance" name="instance" required {{ stimulus_target('login', 'instanceSelect') }}>
-                            <option></option>
-                            {% for instance in instances %}
-                                <option {% if instance is same as last_instance %}selected{% endif %}>{{ instance }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    {% if single_instance_mode %}
+                        <input type="hidden" name="instance" value="{{ default_instance }}" />
+                    {% else %}
+                        <div class="form-group">
+                            <label for="inputInstance">{{ "Instance" | trans }}</label>
+                            <select id="inputInstance" name="instance" required {{ stimulus_target('login', 'instanceSelect') }}>
+                                <option></option>
+                                {% for instance in instances %}
+                                    <option {% if instance is same as last_instance %}selected{% endif %}>{{ instance }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
                     <div class="form-group">
                         <label for="inputUsername">{{ "Username" | trans }}</label>
                         <input type="text" value="{{ last_username }}" name="username" id="inputUsername" class="form-control" required autocomplete="username" />

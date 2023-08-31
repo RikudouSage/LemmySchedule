@@ -25,6 +25,8 @@ final class AuthenticationController extends AbstractController
         AuthenticationUtils $authenticationUtils,
         Request $request,
         InstanceListProviderCollection $instanceListProvider,
+        bool $singleInstanceMode,
+        string $defaultInstance,
     ): Response {
         if ($this->getUser()) {
             return $this->redirectToRoute('app.home');
@@ -55,6 +57,8 @@ final class AuthenticationController extends AbstractController
             'last_instance' => $lastInstance,
             'show_totp' => $showTotp,
             'instances' => $instanceListProvider->getInstances(),
+            'default_instance' => $defaultInstance,
+            'single_instance_mode' => $singleInstanceMode,
         ]);
     }
 

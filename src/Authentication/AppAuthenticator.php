@@ -43,6 +43,8 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         private readonly LemmyApiFactory $apiFactory,
         private readonly TranslatorInterface $translator,
         private readonly MessageBusInterface $messageBus,
+        private readonly string $defaultInstance,
+        private readonly bool $singleInstanceMode,
     ) {
     }
 
@@ -52,6 +54,12 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         $username = $request->request->get('username');
         $password = $request->request->get('password');
         $totp = $request->request->get('totp');
+
+        if ($this->singleInstanceMode && $instance !== $this->defaultInstance) {
+            throw new CustomUserMessageAuthenticationException($this->translator->trans('Using this app you can only log in to the {instance} instance', [
+                '{instance}' => $this->defaultInstance,
+            ]));
+        }
 
         $request->getSession()->set('last_instance', $instance);
         $request->getSession()->set(Security::LAST_USERNAME, $username);
