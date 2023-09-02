@@ -14,6 +14,7 @@ final readonly class UserProvider implements UserProviderInterface
 
     public function __construct(
         private RequestStack $requestStack,
+        private string $adminUsername,
     ) {
     }
 
@@ -46,6 +47,7 @@ final readonly class UserProvider implements UserProviderInterface
             username: $json['username'],
             instance: $json['instance'],
             jwt: $json['jwt'],
+            isAdmin: $json['username'] === $this->adminUsername,
         );
         if ($user->getUserIdentifier() !== $identifier) {
             throw new UserNotFoundException('User not found');

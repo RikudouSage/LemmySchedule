@@ -10,12 +10,18 @@ final readonly class User implements UserInterface
         private string $username,
         private string $instance,
         private string $jwt,
+        private bool $isAdmin,
     ) {
     }
 
     public function getRoles(): array
     {
-        return ['ROLE_USER'];
+        $roles = ['ROLE_USER'];
+        if ($this->isAdmin) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+
+        return $roles;
     }
 
     public function eraseCredentials(): void

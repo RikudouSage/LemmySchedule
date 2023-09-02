@@ -6,6 +6,7 @@
 parameters:
     app.default_instance: '%env(DEFAULT_INSTANCE)%'
     app.single_instance: '%env(bool:SINGLE_INSTANCE_MODE)%'
+    app.admin_username: '%env(ADMIN_USERNAME)%'
 
     app.file_uploader.local.path: '%env(resolve:LOCAL_FILE_UPLOADER_PATH)%'
     app.file_uploader.s3.bucket: '%env(S3_FILE_UPLOADER_BUCKET)%'
@@ -28,6 +29,7 @@ services:
         bind:
             string $defaultInstance: '%app.default_instance%'
             bool $singleInstanceMode: '%app.single_instance%'
+            string $adminUsername: '%app.admin_username%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

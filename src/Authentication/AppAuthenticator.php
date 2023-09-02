@@ -45,6 +45,7 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         private readonly MessageBusInterface $messageBus,
         private readonly string $defaultInstance,
         private readonly bool $singleInstanceMode,
+        private readonly string $adminUsername,
     ) {
     }
 
@@ -104,7 +105,7 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         ]);
 
         return new SelfValidatingPassport(
-            new UserBadge("{$username}@{$instance}", static fn () => new User($username, $instance, $api->getJwt())),
+            new UserBadge("{$username}@{$instance}", static fn () => new User($username, $instance, $api->getJwt(), $username === $this->adminUsername)),
             [
                 new CsrfTokenBadge('authenticate', $request->request->get('_csrf_token')),
             ]

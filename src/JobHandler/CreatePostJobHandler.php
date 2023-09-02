@@ -33,7 +33,7 @@ final readonly class CreatePostJobHandler
         $imageUrl = null;
         $api = $this->apiFactory->get($job->instance, jwt: $job->jwt);
         if ($imageId = $job->imageId) {
-            $imageUrl = $this->fileProvider->getLink($imageId, new User('fake_user', $job->instance, $job->jwt));
+            $imageUrl = $this->fileProvider->getLink($imageId, new User('fake_user', $job->instance, $job->jwt, false));
         }
         $post = $api->post()->create(
             community: $job->community,

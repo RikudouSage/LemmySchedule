@@ -25,6 +25,7 @@ final class CookieAuthenticator extends AbstractAuthenticator
         private readonly CookieSetter $cookieSetter,
         private readonly string $defaultInstance,
         private readonly bool $singleInstanceMode,
+        private readonly string $adminUsername,
     ) {
     }
 
@@ -46,11 +47,14 @@ final class CookieAuthenticator extends AbstractAuthenticator
                 '{instance}' => $this->defaultInstance,
             ]));
         }
+        if (!$value['username']) { // prevent user with no username being an admin
+            $this->cookieSetter->removeCookie(UserProvider::COOKIE_NAME);
+        }
 
         return new SelfValidatingPassport(
             new UserBadge(
                 "{$value['username']}@{$value['instance']}",
-                static fn () => new User($value['username'], $value['instance'], $value['jwt']),
+                static fn () => new User($value['username'], $value['instance'], $value['jwt'], $value['username'] === $this->adminUsername),
             )
         );
     }
