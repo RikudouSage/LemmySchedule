@@ -54,7 +54,7 @@ final class CookieAuthenticator extends AbstractAuthenticator
         return new SelfValidatingPassport(
             new UserBadge(
                 "{$value['username']}@{$value['instance']}",
-                static fn () => new User($value['username'], $value['instance'], $value['jwt'], $value['username'] === $this->adminUsername),
+                fn () => new User($value['username'], $value['instance'], $value['jwt'], $value['username'] === $this->adminUsername),
             )
         );
     }

@@ -105,7 +105,7 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         ]);
 
         return new SelfValidatingPassport(
-            new UserBadge("{$username}@{$instance}", static fn () => new User($username, $instance, $api->getJwt(), $username === $this->adminUsername)),
+            new UserBadge("{$username}@{$instance}", fn () => new User($username, $instance, $api->getJwt(), $username === $this->adminUsername)),
             [
                 new CsrfTokenBadge('authenticate', $request->request->get('_csrf_token')),
             ]
