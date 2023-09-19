@@ -33,6 +33,14 @@
                         <input id="file" accept="image/*" class="form-control" type="file" name="image"/>
                     </div>
                     <div class="form-group">
+                        <label for="fileProvider">{{ "File hosting" | trans }}</label>
+                        <select class="form-control" id="fileProvider" name="fileProvider">
+                            {% for option in fileProviders|filter(provider => provider.available) %}
+                                <option value="{{ option.id }}" {% if option.id is same as defaultFileProvider %}selected{% endif %}>{{ option.displayName }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="inputLanguage">{{ "Language" | trans }}</label>
                         <select id="inputLanguage"
                                 name="language" {{ stimulus_target('create-post', 'languageSelect') }}>

@@ -7,6 +7,7 @@ use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
 use App\Enum\Weekday;
+use App\FileProvider\FileProvider;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJob;
@@ -25,6 +26,7 @@ use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -161,14 +163,27 @@ final class PostController extends AbstractController
         ]);
     }
 
+    /**
+     * @param iterable<FileProvider> $fileProviders
+     */
     #[Route('/create', name: 'app.post.create', methods: [Request::METHOD_GET])]
-    public function createPost(): Response
-    {
+    public function createPost(
+        #[TaggedIterator('app.file_provider')]
+        iterable $fileProviders,
+    ): Response {
+        $fileProviders = [...$fileProviders];
+        $default = (array_values(array_filter($fileProviders, static fn (FileProvider $fileProvider) => $fileProvider->isDefault()))[0] ?? null)?->getId();
+        if ($default === null) {
+            throw new LogicException('No default file provider specified');
+        }
+
         return $this->render('post/create.html.twig', [
             'communities' => $this->getCommunities(),
             'selectedCommunities' => [],
             'languages' => Language::cases(),
             'selectedLanguage' => Language::Undetermined,
+            'fileProviders' => [...$fileProviders],
+            'defaultFileProvider' => $default,
         ]);
     }
 
@@ -181,6 +196,8 @@ final class PostController extends AbstractController
         CurrentUserService $currentUserService,
         FileUploader $fileUploader,
         ScheduleExpressionParser $scheduleExpressionParser,
+        #[TaggedIterator('app.file_provider')]
+        iterable $fileProviders,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -200,6 +217,8 @@ final class PostController extends AbstractController
             'recurring' => $request->request->getBoolean('recurring'),
             'scheduleUnpin' => $request->request->getBoolean('scheduleUnpin'),
             'scheduleUnpinDateTime' => $request->request->get('scheduleUnpinDateTime'),
+            'fileProviders' => [...$fileProviders],
+            'defaultFileProvider' => $request->request->get('fileProvider'),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -332,6 +351,7 @@ final class PostController extends AbstractController
                     scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
                     scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
                     unpinAt: $data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null,
+                    fileProvider: $data['defaultFileProvider'],
                 ),
                 $dateTime,
             );

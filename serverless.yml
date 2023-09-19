@@ -64,7 +64,7 @@ functions:
     web:
         handler: public/index.php
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
-        memorySize: 256
+        memorySize: 512
         environment:
             CONSOLE_FUNCTION: !GetAtt ConsoleLambdaFunction.Arn
         layers:

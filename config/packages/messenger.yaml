@@ -12,7 +12,7 @@ framework:
         routing:
             # Route your messages to the transports
             App\Job\RefreshInstanceListJob: async
-            App\Job\CreatePostJob: async
+#            App\Job\CreatePostJob: async
             App\Job\FetchCommunitiesJob: async
             App\Job\PinUnpinPostJob: async
             App\Job\PinUnpinPostJobV2: async
