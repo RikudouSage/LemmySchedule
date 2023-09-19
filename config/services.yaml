@@ -11,6 +11,8 @@ parameters:
     app.file_uploader.s3.bucket: '%env(S3_FILE_UPLOADER_BUCKET)%'
     app.file_uploader.class: '%env(FILE_UPLOADER_CLASS)%'
 
+    app.file_provider.imgur.access_token: '%env(IMGUR_ACCESS_TOKEN)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -42,3 +44,7 @@ services:
     App\FileUploader\S3FileUploader:
         arguments:
             $bucket: '%app.file_uploader.s3.bucket%'
+
+    App\FileProvider\ImgurFileProvider:
+        arguments:
+            $accessToken: '%app.file_provider.imgur.access_token%'

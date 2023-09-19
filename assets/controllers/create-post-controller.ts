@@ -15,6 +15,8 @@ export default class extends Controller {
         'pinToInstanceSwitch',
         'scheduleUnpinSwitch',
         'scheduleUnpinWrapper',
+        'fileProviderWrapper',
+        'fileSelect',
     ];
 
     private timezoneOffsetTarget: HTMLInputElement;
@@ -28,6 +30,8 @@ export default class extends Controller {
     private pinToInstanceSwitchTarget: HTMLInputElement;
     private scheduleUnpinSwitchTarget: HTMLInputElement;
     private scheduleUnpinWrapperTarget: HTMLDivElement;
+    private fileProviderWrapperTarget: HTMLDivElement;
+    private fileSelectTarget: HTMLInputElement;
 
     public async connect(): Promise<void> {
         this.timezoneOffsetTarget.value = DateHelper.getTimezoneOffset();
@@ -43,6 +47,7 @@ export default class extends Controller {
 
         await this.toggleRecurring();
         await this.toggleScheduleUnpinSwitch();
+        await this.toggleFileProvider();
     }
 
     public async toggleRecurring(): Promise<void> {
@@ -58,5 +63,9 @@ export default class extends Controller {
     public async toggleScheduleUnpinSwitch(): Promise<void> {
         this.scheduleUnpinSwitchWrapperTarget.hidden = !(this.pinToCommunitySwitchTarget.checked || this.pinToInstanceSwitchTarget.checked);
         this.scheduleUnpinWrapperTarget.hidden = !(!this.scheduleUnpinSwitchWrapperTarget.hidden && this.scheduleUnpinSwitchTarget.checked);
+    }
+
+    public async toggleFileProvider(): Promise<void> {
+        this.fileProviderWrapperTarget.hidden = !this.fileSelectTarget.files.length;
     }
 }
