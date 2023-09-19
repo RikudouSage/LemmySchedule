@@ -97,6 +97,7 @@ in `.env.local` file.
 | `APP_CACHE_DIR`            | the directory for storing cache, it should be some permanent directory                                                                              |                                                      | no           |
 | `APP_LOG_DIR`              | the directory for storing logs                                                                                                                      |                                                      | no           |
 | `SINGLE_INSTANCE_MODE`     | set to either 1 or 0, 1 means that only users from the instance specified in `DEFAULT_INSTANCE` can log in                                          | 0                                                    | **yes**      |
+| `IMGUR_ACCESS_TOKEN`       | set to Imgur access token if you want to enable Imgur                                                                                               |                                                      | no           |
 
 #### Job transports
 
@@ -129,6 +130,16 @@ You can use a special variable `%kernel.project_dir%` that gets replaced with th
 
 If you go with S3, you also need to specify `S3_FILE_UPLOADER_BUCKET` which is the name of the bucket where
 the files will be stored.
+
+
+#### File providers
+
+File providers are handlers for uploading images. Some of them might need configuration before they show up in the UI.
+
+Currently supported ones:
+
+- **instance upload** - the default, always supported
+- **Imgur** - an Imgur access token is required
 
 #### Cache
 
@@ -184,6 +195,7 @@ You need to set these environment variables (as real environment variables, not 
 You may set these environment variables as well (as real environment variables, not as part of .env.local):
 
 - `SINGLE_INSTANCE_MODE`
+- `IMGUR_ACCESS_TOKEN`
 
 ### Deploying
 
@@ -215,6 +227,7 @@ Other variables which might need changing:
   - Read the [documentation on uploading files](#file-uploading) in this README
 - `SINGLE_INSTANCE_MODE` - set to 1 if you want to run in single instance mode where only people from instance set in
   `DEFAULT_INSTANCE` can log in
+- `IMGUR_ACCESS_TOKEN` - the access token to use with Imgur, leave empty to not support Imgur
 
 ### Volumes
 

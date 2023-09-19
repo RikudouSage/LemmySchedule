@@ -49,7 +49,7 @@ provider:
         FILE_UPLOADER_CLASS: App\FileUploader\S3FileUploader
         ROLE_ARN: !GetAtt EventBridgeRole.Arn
         SINGLE_INSTANCE_MODE: ${env:SINGLE_INSTANCE_MODE, '0'}
-        IMGUR_ACCESS_TOKEN: ${env:IMGUR_ACCESS_TOKEN}
+        IMGUR_ACCESS_TOKEN: ${env:IMGUR_ACCESS_TOKEN, ''}
 
 plugins:
   - ./vendor/bref/bref
