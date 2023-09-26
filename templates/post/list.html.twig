@@ -42,7 +42,8 @@
                             <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
                             <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
                             <td>
-                                <button class="btn btn-danger" type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
+                                <button class="btn btn-danger"
+                                        type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
                                     {{ "Cancel" | trans }}
                                 </button>
                             </td>
@@ -104,7 +105,8 @@
                             </td>
                             <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
                             <td>
-                                <button class="btn btn-danger" type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
+                                <button class="btn btn-danger"
+                                        type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
                                     {{ "Cancel" | trans }}
                                 </button>
                             </td>
@@ -121,4 +123,59 @@
             </div>
         </div>
     </div>
+    {% if hasBot %}
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ "Unread post reports" | trans }}</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>{{ "Community" | trans }}</th>
+                            <th>{{ "Recurring" | trans }}</th>
+                            <th>{{ "Scheduled at" | trans }}</th>
+                            <th>{{ "Cancel" | trans }}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td colspan="4">
+                                <a class="btn btn-primary"
+                                   href="{{ path('app.post.unread_post_report_create') }}">{{ "Schedule an unread post report" | trans }}</a>
+                            </td>
+                        </tr>
+                        {% for job in postReportJobs %}
+                            <tr {{ stimulus_controller('scheduled-job', {
+                                cancelUrl: path('app.post.ajax.cancel', {
+                                    jobId: job.jobId,
+                                }),
+                                errorDeletingText: "There was an error when cancelling the job." | trans,
+                            }) }}>
+                                <td>
+                                    {{ job.community }} (<a href="{{ job.url }}" target="_blank">{{ job.url }}</a>)
+                                </td>
+                                <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
+                                <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
+                                <td>
+                                    <button class="btn btn-danger"
+                                            type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
+                                        {{ "Cancel" | trans }}
+                                    </button>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4">
+                                    {{ "You have no scheduled unread post reports." | trans }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
