@@ -46,7 +46,7 @@ final class PostController extends AbstractController
     }
 
     #[Route('/list', name: 'app.post.list', methods: [Request::METHOD_GET])]
-    public function listPosts(JobManager $jobManager, LemmyApiFactory $apiFactory, string $botJwt): Response
+    public function listPosts(JobManager $jobManager, LemmyApiFactory $apiFactory, bool $unreadPostsEnabled): Response
     {
         $api = $apiFactory->getForCurrentUser();
 
@@ -135,7 +135,7 @@ final class PostController extends AbstractController
             'postCreateJobs' => $postCreateJobs,
             'postPinJobs' => $postPinJobs,
             'postReportJobs' => $postReportJobs,
-            'hasBot' => !!$botJwt,
+            'unreadPostsEnabled' => $unreadPostsEnabled,
         ]);
     }
 
@@ -383,8 +383,11 @@ final class PostController extends AbstractController
     }
 
     #[Route('/create-unread-post-report', name: 'app.post.unread_post_report_create', methods: [Request::METHOD_GET])]
-    public function createUnreadPostReport(): Response
+    public function createUnreadPostReport(bool $unreadPostsEnabled): Response
     {
+        if (!$unreadPostsEnabled) {
+            throw $this->createNotFoundException('Unread posts not enabled because a bot user is not configured');
+        }
         return $this->render('post/create-report.html.twig', [
             'communities' => $this->getCommunities(),
             'selectedCommunities' => [],
@@ -401,7 +404,12 @@ final class PostController extends AbstractController
         JobManager $jobManager,
         CurrentUserService $currentUserService,
         ScheduleExpressionParser $scheduleExpressionParser,
+        bool $unreadPostsEnabled,
     ) {
+        if (!$unreadPostsEnabled) {
+            throw $this->createNotFoundException('Unread posts not enabled because a bot user is not configured');
+        }
+
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
 

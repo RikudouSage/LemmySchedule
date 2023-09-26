@@ -33,7 +33,7 @@ services:
         bind:
             string $defaultInstance: '%app.default_instance%'
             bool $singleInstanceMode: '%app.single_instance%'
-            string $botJwt: '%app.unread_posts.bot_jwt%'
+            bool $unreadPostsEnabled: '@=parameter("app.unread_posts.bot_jwt") && parameter("app.unread_posts.bot_instance")'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
