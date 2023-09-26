@@ -13,6 +13,9 @@ parameters:
 
     app.file_provider.imgur.access_token: '%env(IMGUR_ACCESS_TOKEN)%'
 
+    app.unread_posts.bot_jwt: '%env(UNREAD_POSTS_BOT_JWT)%'
+    app.unread_posts.bot_instance: '%env(UNREAD_POSTS_BOT_INSTANCE)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -30,6 +33,7 @@ services:
         bind:
             string $defaultInstance: '%app.default_instance%'
             bool $singleInstanceMode: '%app.single_instance%'
+            bool $unreadPostsEnabled: '@=parameter("app.unread_posts.bot_jwt") && parameter("app.unread_posts.bot_instance")'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
@@ -48,3 +52,8 @@ services:
     App\FileProvider\ImgurFileProvider:
         arguments:
             $accessToken: '%app.file_provider.imgur.access_token%'
+
+    App\JobHandler\ReportUnreadPostsJobHandler:
+        arguments:
+            $botInstance: '%app.unread_posts.bot_instance%'
+            $botJwt: '%app.unread_posts.bot_jwt%'

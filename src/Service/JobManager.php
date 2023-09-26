@@ -107,6 +107,28 @@ final readonly class JobManager
         $this->messageBus->dispatch($message, $stamps);
     }
 
+    /**
+     * @return array<Envelope>
+     */
+    public function getActiveJobsByType(string $type): iterable
+    {
+        return array_filter($this->listJobs(), function (Envelope $envelope) use ($type) {
+            $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
+            if (!$jobId) {
+                return false;
+            }
+            if ($this->isCancelled($jobId)) {
+                return false;
+            }
+
+            if (!is_a($envelope->getMessage(), $type, true)) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
     private function getUserIdentifier(): string
     {
         return str_replace('@', '___', $this->currentUserService->getCurrentUser()?->getUserIdentifier() ?? '');

@@ -1,0 +1,58 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "Schedule an unread post report" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data"
+                      action="{{ path('app.post.unread_post_report_create.do') }}" {{ stimulus_controller('create-post-report') }}>
+                    <div class="form-group">
+                        <label for="inputCommunities">{{ "Communities" | trans }}</label>
+                        <select multiple id="inputCommunities"
+                                name="communities[]" {{ stimulus_target('create-post-report', 'communitySelect') }}>
+                            <option></option>
+                            {% for communityOption in communities %}
+                                <option {% if communityOption in selectedCommunities %}selected{% endif %}>{{ communityOption }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="hidden" name="recurring" value="0"/>
+                            <input class="custom-control-input" type="checkbox"
+                                   value="1" {% if recurring %}checked{% endif %}
+                                   id="inputRecurring" {{ stimulus_action('create-post-report', 'toggleRecurring') }}
+                                   name="recurring" {{ stimulus_target('create-post-report', 'recurringScheduleSwitch') }} />
+                            <label for="inputRecurring" class="custom-control-label">{{ "Recurring?" | trans }}</label>
+                        </div>
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post-report', 'oneTimeSchedule') }}>
+                        <label for="inputScheduleDateTime">{{ "When do you want to post?" | trans }}</label>
+                        <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
+                               type="datetime-local" value="{{ scheduleDateTime }}"/>
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post-report', 'recurringSchedule') }}>
+                        <label>{{ "When do you want to post?" | trans }}</label>
+                        <div>
+                            {{ component('ScheduleComponent', {
+                                amount: scheduler.amount|default(1),
+                                scheduleType: scheduler.scheduleType|default(constant('App\\Enum\\ScheduleType::Day')),
+                                selectedDayType: scheduler.selectedDayType|default(constant('App\\Enum\\DayType::SpecificDay')),
+                                day: scheduler.day|default(1),
+                                weekday: scheduler.weekday|default(constant('App\\Enum\\Weekday::Monday')),
+                            }) }}
+                        </div>
+                    </div>
+
+                    <input type="hidden"
+                           name="timezoneOffset" {{ stimulus_target('create-post-report', 'timezoneOffset') }} />
+                    <button class="btn btn-primary" type="submit">
+                        {{ "Schedule" | trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
