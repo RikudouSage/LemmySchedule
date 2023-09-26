@@ -13,6 +13,9 @@ parameters:
 
     app.file_provider.imgur.access_token: '%env(IMGUR_ACCESS_TOKEN)%'
 
+    app.unread_posts.bot_jwt: '%env(UNREAD_POSTS_BOT_JWT)%'
+    app.unread_posts.bot_instance: '%env(UNREAD_POSTS_BOT_INSTANCE)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -48,3 +51,8 @@ services:
     App\FileProvider\ImgurFileProvider:
         arguments:
             $accessToken: '%app.file_provider.imgur.access_token%'
+
+    App\JobHandler\ReportUnreadPostsJobHandler:
+        arguments:
+            $botInstance: '%app.unread_posts.bot_instance%'
+            $botJwt: '%app.unread_posts.bot_jwt%'
