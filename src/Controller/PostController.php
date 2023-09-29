@@ -130,6 +130,7 @@ final class PostController extends AbstractController
             ]),
             $jobManager->getActiveJobsByType(ReportUnreadPostsJob::class),
         );
+        usort($postReportJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
 
         return $this->render('post/list.html.twig', [
             'postCreateJobs' => $postCreateJobs,
