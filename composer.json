@@ -17,7 +17,7 @@
         "nyholm/psr7": "^1.8",
         "php-http/discovery": "^1.18",
         "psr/http-factory-implementation": "*",
-        "rikudou/lemmy-api": "^0.2.8",
+        "rikudou/lemmy-api": "^0.3.0",
         "rikudou/psr6-dynamo-db-bundle": "^4.0",
         "symfony/amazon-sqs-messenger": "6.3.*",
         "symfony/apache-pack": "^1.0",
