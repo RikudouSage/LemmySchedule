@@ -33,6 +33,7 @@ final readonly class ImgurFileProvider implements FileProvider
             ],
         );
         $body = json_decode($response->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        $this->uploader->delete($fileId);
 
         return $body['data']['link'];
     }
