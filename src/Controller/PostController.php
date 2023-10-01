@@ -10,6 +10,7 @@ use App\Enum\Weekday;
 use App\FileProvider\FileProvider;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
+use App\Job\DeleteFileJob;
 use App\Job\PinUnpinPostJob;
 use App\Job\PinUnpinPostJobV2;
 use App\Job\ReportUnreadPostsJob;
@@ -18,6 +19,7 @@ use App\Lemmy\LemmyApiFactory;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
 use App\Service\ScheduleExpressionParser;
+use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
@@ -116,17 +118,18 @@ final class PostController extends AbstractController
 
         $postReportJobs = array_map(
             fn (Envelope $job) => $this->getJobArray($job, callbacks: [
-                'community' => function (ReportUnreadPostsJob $job) {
+                'community' => static function (ReportUnreadPostsJob $job) {
                     $host = parse_url($job->community->actorId, PHP_URL_HOST);
+
                     return "!{$job->community->name}@{$host}";
                 },
-                'url' => function (ReportUnreadPostsJob $job) {
+                'url' => static function (ReportUnreadPostsJob $job) {
                     $host = parse_url($job->community->actorId, PHP_URL_HOST);
                     $community = "{$job->community->name}@{$host}";
 
                     return "https://{$job->instance}/c/{$community}";
                 },
-                'recurring' => fn (ReportUnreadPostsJob $job) => $job->scheduleExpression !== null,
+                'recurring' => static fn (ReportUnreadPostsJob $job) => $job->scheduleExpression !== null,
             ]),
             $jobManager->getActiveJobsByType(ReportUnreadPostsJob::class),
         );
@@ -377,6 +380,9 @@ final class PostController extends AbstractController
                 $dateTime,
             );
         }
+        if ($imageId !== null) {
+            $jobManager->createJob(new DeleteFileJob($imageId), $dateTime->add(new DateInterval('PT5M')));
+        }
 
         $this->addFlash('success', $translator->trans('Posts have been successfully scheduled.'));
 
@@ -389,6 +395,7 @@ final class PostController extends AbstractController
         if (!$unreadPostsEnabled) {
             throw $this->createNotFoundException('Unread posts not enabled because a bot user is not configured');
         }
+
         return $this->render('post/create-report.html.twig', [
             'communities' => $this->getCommunities(),
             'selectedCommunities' => [],
@@ -472,7 +479,6 @@ final class PostController extends AbstractController
 
             return $errorResponse();
         }
-
 
         if ($data['recurring']) {
             $dateTime = $scheduleExpressionParser->getNextRunDate(
@@ -641,7 +647,7 @@ final class PostController extends AbstractController
     }
 
     /**
-     * @param array<string|int, string> $fields
+     * @param array<string|int, string>                       $fields
      * @param array<string, callable(object $message): mixed> $callbacks
      */
     private function getJobArray(Envelope $job, array $fields = [], array $callbacks = []): array
@@ -667,7 +673,7 @@ final class PostController extends AbstractController
             if (is_int($sourceField)) {
                 $sourceField = $targetField;
             }
-            $result[$sourceField] = $message->$targetField;
+            $result[$sourceField] = $message->{$targetField};
         }
 
         foreach ($callbacks as $field => $callback) {
