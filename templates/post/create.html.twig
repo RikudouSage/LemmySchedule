@@ -30,7 +30,19 @@
                     </div>
                     <div class="form-group">
                         <label for="file">{{ "Image" | trans }}</label>
-                        <input id="file" accept="image/*" class="form-control" type="file" name="image"/>
+                        <input id="file" accept="image/*" class="form-control" type="file"
+                               name="image" {{ stimulus_target('create-post', 'fileSelect') }}
+                               {{ stimulus_action('create-post', 'toggleFileProvider') }}
+                        />
+                    </div>
+                    <div class="form-group" {{ stimulus_target('create-post', 'fileProviderWrapper') }} hidden>
+                        <label for="fileProvider">{{ "Image hosting" | trans }}</label>
+                        <select class="form-control" id="fileProvider" name="fileProvider">
+                            {% for option in fileProviders|filter(provider => provider.available) %}
+                                <option value="{{ option.id }}"
+                                        {% if option.id is same as defaultFileProvider %}selected{% endif %}>{{ option.displayName }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="inputLanguage">{{ "Language" | trans }}</label>
@@ -59,8 +71,8 @@
                         <div class="custom-control custom-switch">
                             <input class="custom-control-input" type="checkbox" id="inputPinToCommunity"
                                    name="pinToCommunity" {{ stimulus_target('create-post', 'pinToCommunitySwitch') }}
-                                   {% if pinToCommunity|default(false) %}checked{% endif %}
-                                   {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
+                                    {% if pinToCommunity|default(false) %}checked{% endif %}
+                                    {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
                             />
                             <label for="inputPinToCommunity"
                                    class="custom-control-label">{{ "Pin to community" | trans }}</label>
@@ -71,8 +83,8 @@
                         <div class="custom-control custom-switch">
                             <input class="custom-control-input" type="checkbox" id="inputPinToInstance"
                                    name="pinToInstance" {{ stimulus_target('create-post', 'pinToInstanceSwitch') }}
-                                   {% if pinToInstance|default(false) %}checked{% endif %}
-                                   {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
+                                    {% if pinToInstance|default(false) %}checked{% endif %}
+                                    {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
                             />
                             <label for="inputPinToInstance"
                                    class="custom-control-label">{{ "Pin to instance" | trans }}</label>
@@ -83,8 +95,8 @@
                         <div class="custom-control custom-switch custom-switch-on-danger">
                             <input class="custom-control-input" type="checkbox" id="inputScheduleUnpin"
                                    name="scheduleUnpin" {{ stimulus_target('create-post', 'scheduleUnpinSwitch') }}
-                                   {% if scheduleUnpin|default(false) %}checked{% endif %}
-                                   {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
+                                    {% if scheduleUnpin|default(false) %}checked{% endif %}
+                                    {{ stimulus_action('create-post', 'toggleScheduleUnpinSwitch') }}
                             />
                             <label for="inputScheduleUnpin"
                                    class="custom-control-label">{{ "Schedule unpin" | trans }}</label>
@@ -97,7 +109,7 @@
                     </div>
                     <div class="form-group">
                         <div class="custom-control custom-switch">
-                            <input type="hidden" name="recurring" value="0" />
+                            <input type="hidden" name="recurring" value="0"/>
                             <input class="custom-control-input" type="checkbox"
                                    value="1" {% if recurring|default(false) %}checked{% endif %}
                                    id="inputRecurring" {{ stimulus_action('create-post', 'toggleRecurring') }}

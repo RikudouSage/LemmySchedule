@@ -49,6 +49,9 @@ provider:
         FILE_UPLOADER_CLASS: App\FileUploader\S3FileUploader
         ROLE_ARN: !GetAtt EventBridgeRole.Arn
         SINGLE_INSTANCE_MODE: ${env:SINGLE_INSTANCE_MODE, '0'}
+        IMGUR_ACCESS_TOKEN: ${env:IMGUR_ACCESS_TOKEN, ''}
+        UNREAD_POSTS_BOT_JWT: ${env:UNREAD_POSTS_BOT_JWT, ''}
+        UNREAD_POSTS_BOT_INSTANCE: ${env:UNREAD_POSTS_BOT_INSTANCE, ''}
 
 plugins:
   - ./vendor/bref/bref
@@ -64,7 +67,7 @@ functions:
     web:
         handler: public/index.php
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
-        memorySize: 256
+        memorySize: 512
         environment:
             CONSOLE_FUNCTION: !GetAtt ConsoleLambdaFunction.Arn
         layers:

@@ -14,26 +14,44 @@ use App\Service\ScheduleExpressionParser;
 use DateTimeZone;
 use Rikudou\LemmyApi\Enum\PostFeatureType;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
+use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
 final readonly class CreatePostJobHandler
 {
+    /**
+     * @param iterable<FileProvider> $fileProviders
+     */
     public function __construct(
         private LemmyApiFactory $apiFactory,
-        private FileProvider $fileProvider,
         private ScheduleExpressionParser $scheduleExpressionParser,
         private JobManager $jobManager,
         private CurrentUserService $currentUserService,
+        #[TaggedIterator('app.file_provider')]
+        private iterable $fileProviders,
     ) {
     }
 
     public function __invoke(CreatePostJob $job): void
     {
+        $default = null;
+        $chosenFileProvider = null;
+        foreach ($this->fileProviders as $fileProvider) {
+            if ($fileProvider->isDefault()) {
+                $default = $fileProvider;
+            }
+            if ($fileProvider->getId() === $job->fileProvider && $fileProvider->isAvailable()) {
+                $chosenFileProvider = $fileProvider;
+            }
+        }
+        $chosenFileProvider ??= $default;
+        assert($chosenFileProvider !== null);
+
         $imageUrl = null;
         $api = $this->apiFactory->get($job->instance, jwt: $job->jwt);
         if ($imageId = $job->imageId) {
-            $imageUrl = $this->fileProvider->getLink($imageId, new User('fake_user', $job->instance, $job->jwt, false));
+            $imageUrl = $chosenFileProvider->getLink($imageId, new User('fake_user', $job->instance, $job->jwt, false));
         }
         $post = $api->post()->create(
             community: $job->community,

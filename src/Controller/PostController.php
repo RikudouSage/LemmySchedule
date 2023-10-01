@@ -7,10 +7,12 @@ use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
 use App\Enum\Weekday;
+use App\FileProvider\FileProvider;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJob;
 use App\Job\PinUnpinPostJobV2;
+use App\Job\ReportUnreadPostsJob;
 use App\JobStamp\MetadataStamp;
 use App\Lemmy\LemmyApiFactory;
 use App\Service\CurrentUserService;
@@ -25,6 +27,7 @@ use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,7 +46,7 @@ final class PostController extends AbstractController
     }
 
     #[Route('/list', name: 'app.post.list', methods: [Request::METHOD_GET])]
-    public function listPosts(JobManager $jobManager, LemmyApiFactory $apiFactory): Response
+    public function listPosts(JobManager $jobManager, LemmyApiFactory $apiFactory, bool $unreadPostsEnabled): Response
     {
         $api = $apiFactory->getForCurrentUser();
 
@@ -111,9 +114,29 @@ final class PostController extends AbstractController
         }, $postPinJobs);
         usort($postPinJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
 
+        $postReportJobs = array_map(
+            fn (Envelope $job) => $this->getJobArray($job, callbacks: [
+                'community' => function (ReportUnreadPostsJob $job) {
+                    $host = parse_url($job->community->actorId, PHP_URL_HOST);
+                    return "!{$job->community->name}@{$host}";
+                },
+                'url' => function (ReportUnreadPostsJob $job) {
+                    $host = parse_url($job->community->actorId, PHP_URL_HOST);
+                    $community = "{$job->community->name}@{$host}";
+
+                    return "https://{$job->instance}/c/{$community}";
+                },
+                'recurring' => fn (ReportUnreadPostsJob $job) => $job->scheduleExpression !== null,
+            ]),
+            $jobManager->getActiveJobsByType(ReportUnreadPostsJob::class),
+        );
+        usort($postReportJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
+
         return $this->render('post/list.html.twig', [
             'postCreateJobs' => $postCreateJobs,
             'postPinJobs' => $postPinJobs,
+            'postReportJobs' => $postReportJobs,
+            'unreadPostsEnabled' => $unreadPostsEnabled,
         ]);
     }
 
@@ -161,14 +184,27 @@ final class PostController extends AbstractController
         ]);
     }
 
+    /**
+     * @param iterable<FileProvider> $fileProviders
+     */
     #[Route('/create', name: 'app.post.create', methods: [Request::METHOD_GET])]
-    public function createPost(): Response
-    {
+    public function createPost(
+        #[TaggedIterator('app.file_provider')]
+        iterable $fileProviders,
+    ): Response {
+        $fileProviders = [...$fileProviders];
+        $default = (array_values(array_filter($fileProviders, static fn (FileProvider $fileProvider) => $fileProvider->isDefault()))[0] ?? null)?->getId();
+        if ($default === null) {
+            throw new LogicException('No default file provider specified');
+        }
+
         return $this->render('post/create.html.twig', [
             'communities' => $this->getCommunities(),
             'selectedCommunities' => [],
             'languages' => Language::cases(),
             'selectedLanguage' => Language::Undetermined,
+            'fileProviders' => [...$fileProviders],
+            'defaultFileProvider' => $default,
         ]);
     }
 
@@ -181,6 +217,8 @@ final class PostController extends AbstractController
         CurrentUserService $currentUserService,
         FileUploader $fileUploader,
         ScheduleExpressionParser $scheduleExpressionParser,
+        #[TaggedIterator('app.file_provider')]
+        iterable $fileProviders,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -200,6 +238,8 @@ final class PostController extends AbstractController
             'recurring' => $request->request->getBoolean('recurring'),
             'scheduleUnpin' => $request->request->getBoolean('scheduleUnpin'),
             'scheduleUnpinDateTime' => $request->request->get('scheduleUnpinDateTime'),
+            'fileProviders' => [...$fileProviders],
+            'defaultFileProvider' => $request->request->get('fileProvider'),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -332,12 +372,130 @@ final class PostController extends AbstractController
                     scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
                     scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
                     unpinAt: $data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null,
+                    fileProvider: $data['defaultFileProvider'],
                 ),
                 $dateTime,
             );
         }
 
         $this->addFlash('success', $translator->trans('Posts have been successfully scheduled.'));
+
+        return $this->redirectToRoute('app.post.list');
+    }
+
+    #[Route('/create-unread-post-report', name: 'app.post.unread_post_report_create', methods: [Request::METHOD_GET])]
+    public function createUnreadPostReport(bool $unreadPostsEnabled): Response
+    {
+        if (!$unreadPostsEnabled) {
+            throw $this->createNotFoundException('Unread posts not enabled because a bot user is not configured');
+        }
+        return $this->render('post/create-report.html.twig', [
+            'communities' => $this->getCommunities(),
+            'selectedCommunities' => [],
+            'recurring' => false,
+            'scheduleDateTime' => '',
+        ]);
+    }
+
+    #[Route('/create-unread-post-report/do', name: 'app.post.unread_post_report_create.do', methods: [Request::METHOD_POST])]
+    public function doCreateUnreadPostReport(
+        Request $request,
+        LemmyApiFactory $apiFactory,
+        TranslatorInterface $translator,
+        JobManager $jobManager,
+        CurrentUserService $currentUserService,
+        ScheduleExpressionParser $scheduleExpressionParser,
+        bool $unreadPostsEnabled,
+    ) {
+        if (!$unreadPostsEnabled) {
+            throw $this->createNotFoundException('Unread posts not enabled because a bot user is not configured');
+        }
+
+        $api = $apiFactory->getForCurrentUser();
+        $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
+
+        $data = [
+            'selectedCommunities' => $request->request->all('communities'),
+            'scheduleDateTime' => $request->request->get('scheduleDateTime'),
+            'timezoneOffset' => $request->request->get('timezoneOffset'),
+            'scheduler' => $request->request->all('scheduler'),
+            'recurring' => $request->request->getBoolean('recurring'),
+        ];
+        $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
+        if (isset($data['scheduler']['scheduleType'])) {
+            $data['scheduler']['scheduleType'] = ScheduleType::from((int) $data['scheduler']['scheduleType']);
+        }
+        if (isset($data['scheduler']['selectedDayType'])) {
+            $data['scheduler']['selectedDayType'] = DayType::from((int) $data['scheduler']['selectedDayType']);
+        }
+        if (isset($data['scheduler']['weekday'])) {
+            $data['scheduler']['weekday'] = Weekday::from((int) $data['scheduler']['weekday']);
+        }
+
+        $errorResponse = fn () => $this->render('post/create-report.html.twig', [
+            ...$data,
+            'communities' => $this->getCommunities(),
+        ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
+
+        if (!$data['timezoneOffset']) {
+            $this->addFlash('error', $translator->trans('Failed to get your timezone offset. Do you have javascript enabled?'));
+
+            return $errorResponse();
+        }
+        if ($data['recurring']) {
+            $data['scheduler']['timezone'] ??= 'UTC';
+            if (!($data['scheduler']['expression'] ?? false)) {
+                $this->addFlash('error', $translator->trans('The schedule recurring configuration is invalid.'));
+
+                return $errorResponse();
+            }
+        } else {
+            if (!$data['scheduleDateTime']) {
+                $this->addFlash('error', $translator->trans('The schedule date and time must be set.'));
+
+                return $errorResponse();
+            }
+        }
+        $communities = $data['selectedCommunities'];
+        $communities = array_map(static function (string $community) {
+            if (str_starts_with($community, '!')) {
+                $community = substr($community, 1);
+            }
+
+            return $community;
+        }, $communities);
+
+        try {
+            $communities = array_map(static fn (string $community) => $api->community()->get($community), $communities);
+        } catch (LemmyApiException) {
+            $this->addFlash('error', $translator->trans("Couldn't find one or more of the communities, are you sure all of them exist?"));
+
+            return $errorResponse();
+        }
+
+
+        if ($data['recurring']) {
+            $dateTime = $scheduleExpressionParser->getNextRunDate(
+                expression: $data['scheduler']['expression'],
+                timeZone: new DateTimeZone($data['scheduler']['timezone']),
+            );
+        } else {
+            $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
+        }
+        foreach ($communities as $community) {
+            $jobManager->createJob(
+                new ReportUnreadPostsJob(
+                    jwt: $user->getJwt(),
+                    instance: $user->getInstance(),
+                    community: $community,
+                    scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
+                    scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
+                ),
+                $dateTime,
+            );
+        }
+
+        $this->addFlash('success', $translator->trans('Post reports have been successfully scheduled.'));
 
         return $this->redirectToRoute('app.post.list');
     }
@@ -480,5 +638,42 @@ final class PostController extends AbstractController
         $cacheItem = $this->cache->getItem("community_list_{$user->getInstance()}");
 
         return $cacheItem->isHit() ? $cacheItem->get() : [];
+    }
+
+    /**
+     * @param array<string|int, string> $fields
+     * @param array<string, callable(object $message): mixed> $callbacks
+     */
+    private function getJobArray(Envelope $job, array $fields = [], array $callbacks = []): array
+    {
+        $metadata = $job->last(MetadataStamp::class);
+        assert($metadata !== null);
+
+        $dateTime = $metadata->metadata['expiresAt'];
+        assert($dateTime instanceof DateTimeInterface);
+        $id = $metadata->metadata['jobId'];
+
+        $result = [
+            'jobId' => $id,
+            'dateTime' => $dateTime->format('c'),
+        ];
+
+        if (!count($fields) && !count($callbacks)) {
+            return $result;
+        }
+
+        $message = $job->getMessage();
+        foreach ($fields as $sourceField => $targetField) {
+            if (is_int($sourceField)) {
+                $sourceField = $targetField;
+            }
+            $result[$sourceField] = $message->$targetField;
+        }
+
+        foreach ($callbacks as $field => $callback) {
+            $result[$field] = $callback($message);
+        }
+
+        return $result;
     }
 }

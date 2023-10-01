@@ -24,6 +24,7 @@ final readonly class CreatePostJob
         public ?string $scheduleExpression = null,
         public ?string $scheduleTimezone = null,
         public ?DateTimeInterface $unpinAt = null,
+        public ?string $fileProvider = null,
     ) {
     }
 
@@ -38,6 +39,7 @@ final readonly class CreatePostJob
         $data['scheduleExpression'] ??= null;
         $data['scheduleTimezone'] ??= null;
         $data['unpinAt'] ??= null;
+        $data['fileProvider'] ??= null;
 
         foreach ($data as $property => $value) {
             $this->{$property} = $value;
