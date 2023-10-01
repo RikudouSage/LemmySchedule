@@ -26,7 +26,6 @@ final readonly class UploadedFileProvider implements FileProvider
         if (!$result->success) {
             return null;
         }
-        $this->uploader->delete($fileId);
 
         return "https://{$user->getInstance()}/pictrs/image/{$result->files[0]->file}";
     }

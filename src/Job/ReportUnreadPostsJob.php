@@ -12,5 +12,6 @@ final readonly class ReportUnreadPostsJob
         public Community $community,
         public ?string $scheduleExpression = null,
         public ?string $scheduleTimezone = null,
-    ) {}
+    ) {
+    }
 }
