@@ -18,6 +18,7 @@ export default class extends Controller {
 
     static targets = [
         'timezoneOffset',
+        'timezoneName',
         'communitySelect',
         'languageSelect',
         'recurringScheduleSwitch',
@@ -38,6 +39,7 @@ export default class extends Controller {
     ];
 
     private timezoneOffsetTarget: HTMLInputElement;
+    private timezoneNameTarget: HTMLInputElement;
     private communitySelectTarget: HTMLSelectElement;
     private languageSelectTarget: HTMLSelectElement;
     private recurringScheduleSwitchTarget: HTMLInputElement;
@@ -62,6 +64,7 @@ export default class extends Controller {
         useDebounce(this, {wait: 500});
 
         this.timezoneOffsetTarget.value = DateHelper.getTimezoneOffset();
+        this.timezoneNameTarget.value = DateHelper.getTimezoneName();
 
         new TomSelect(this.communitySelectTarget, {
             create: true,
@@ -101,6 +104,7 @@ export default class extends Controller {
             method: 'POST',
             body: JSON.stringify({
                 title: this.titleInputTarget.value,
+                timezone: this.timezoneNameTarget.value,
             }),
         });
         if (!response.ok) {

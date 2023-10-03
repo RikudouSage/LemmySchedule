@@ -245,6 +245,7 @@ final class PostController extends AbstractController
             'scheduleUnpinDateTime' => $request->request->get('scheduleUnpinDateTime'),
             'fileProviders' => [...$fileProviders],
             'defaultFileProvider' => $request->request->get('fileProvider'),
+            'timezoneName' => $request->request->get('timezoneName'),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -378,6 +379,7 @@ final class PostController extends AbstractController
                     scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
                     unpinAt: $data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null,
                     fileProvider: $data['defaultFileProvider'],
+                    timezoneName: $data['timezoneName'],
                 ),
                 $dateTime,
             );
@@ -599,12 +601,16 @@ final class PostController extends AbstractController
         TitleExpressionReplacer $expressionReplacer,
     ): JsonResponse {
         $body = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        if (!isset($body['title'])) {
-            throw new BadRequestHttpException('Missing the title parameter');
+        if (!isset($body['title']) || !isset($body['timezone'])) {
+            throw new BadRequestHttpException('Missing the title or timezone parameter');
         }
 
+        $timezone = $body['timezone'];
+        $originalTimezone = date_default_timezone_get();
+        date_default_timezone_set($timezone);
         $parserResult = $expressionReplacer->parse($body['title']);
         $title = $expressionReplacer->replace($body['title'], $parserResult);
+        date_default_timezone_set($originalTimezone);
 
         return new JsonResponse([
             'validCount' => count($parserResult),

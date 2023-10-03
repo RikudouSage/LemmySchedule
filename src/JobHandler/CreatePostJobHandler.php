@@ -55,9 +55,16 @@ final readonly class CreatePostJobHandler
         if ($imageId = $job->imageId) {
             $imageUrl = $chosenFileProvider->getLink($imageId, new User('fake_user', $job->instance, $job->jwt));
         }
+
+        $targetTimezone = $job->timezoneName ?? 'UTC';
+        $originalTimezone = date_default_timezone_get();
+        date_default_timezone_set($targetTimezone);
+        $title = $this->expressionReplacer->replace($job->title);
+        date_default_timezone_set($originalTimezone);
+
         $post = $api->post()->create(
             community: $job->community,
-            name: $this->expressionReplacer->replace($job->title),
+            name: $title,
             body: $job->text,
             language: $job->language,
             nsfw: $job->nsfw,
