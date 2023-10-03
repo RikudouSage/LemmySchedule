@@ -57,3 +57,7 @@ services:
         arguments:
             $botInstance: '%app.unread_posts.bot_instance%'
             $botJwt: '%app.unread_posts.bot_jwt%'
+
+    App\Service\TitleExpressionLanguage:
+
+    Symfony\Component\ExpressionLanguage\ExpressionLanguage: '@App\Service\TitleExpressionLanguage'

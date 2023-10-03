@@ -19,6 +19,7 @@ use App\Lemmy\LemmyApiFactory;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
 use App\Service\ScheduleExpressionParser;
+use App\Service\TitleExpressionReplacer;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -34,6 +35,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Uuid;
@@ -589,6 +591,26 @@ final class PostController extends AbstractController
         $jobManager->cancelJob($jobId);
 
         return new JsonResponse(status: Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/ajax/title/expression', name: 'app.post.ajax.title_expression', methods: [Request::METHOD_POST])]
+    public function getTitleExpressions(
+        Request $request,
+        TitleExpressionReplacer $expressionReplacer,
+    ): JsonResponse {
+        $body = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        if (!isset($body['title'])) {
+            throw new BadRequestHttpException('Missing the title parameter');
+        }
+
+        $parserResult = $expressionReplacer->parse($body['title']);
+        $title = $expressionReplacer->replace($body['title'], $parserResult);
+
+        return new JsonResponse([
+            'validCount' => count($parserResult),
+            'invalid' => $parserResult->invalidExpressions,
+            'title' => $title,
+        ]);
     }
 
     #[Route('/ajax/fetch-post', name: 'app.post.ajax.fetch', methods: [Request::METHOD_POST])]

@@ -7,12 +7,24 @@
         <div class="card">
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data"
-                      action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post') }}>
+                      action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post', {
+                        parseTitleUrl: path('app.post.ajax.title_expression'),
+                      }) }}>
                     <div class="form-group">
                         <label for="inputTitle">{{ "Title" | trans }}</label>
                         <input id="inputTitle" class="form-control" type="text" name="title"
+                               {{ stimulus_target('create-post', 'titleInput') }}
+                               {{ stimulus_action('create-post', 'checkTitleForExpressions') }}
                                value="{{ title|default('') }}" required
                                autofocus/>
+                        <small hidden {{ stimulus_target('create-post', 'expressionTitleError') }} class="text-danger">
+                            {{ "The title contains the following which looks like an expression, but is not valid:" | trans }}
+                            <span {{ stimulus_target('create-post', 'expressionTitleErrorVariables') }}></span>
+                        </small>
+                        <small hidden {{ stimulus_target('create-post', 'expressionTitlePreviewWrapper') }}>
+                            {{ "This is a preview of the title if it was posted right now:" | trans }}
+                            <strong {{ stimulus_target('create-post', 'expressionTitlePreview') }}></strong>
+                        </small>
                     </div>
                     <div class="form-group">
                         <label for="inputCommunities">{{ "Communities" | trans }}</label>

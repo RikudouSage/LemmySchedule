@@ -11,6 +11,7 @@ use App\Lemmy\LemmyApiFactory;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
 use App\Service\ScheduleExpressionParser;
+use App\Service\TitleExpressionReplacer;
 use DateTimeZone;
 use Rikudou\LemmyApi\Enum\PostFeatureType;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
@@ -30,6 +31,7 @@ final readonly class CreatePostJobHandler
         private CurrentUserService $currentUserService,
         #[TaggedIterator('app.file_provider')]
         private iterable $fileProviders,
+        private TitleExpressionReplacer $expressionReplacer,
     ) {
     }
 
@@ -55,7 +57,7 @@ final readonly class CreatePostJobHandler
         }
         $post = $api->post()->create(
             community: $job->community,
-            name: $job->title,
+            name: $this->expressionReplacer->replace($job->title),
             body: $job->text,
             language: $job->language,
             nsfw: $job->nsfw,
