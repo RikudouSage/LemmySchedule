@@ -14,6 +14,10 @@ export class DateHelper {
         return result;
     }
 
+    public static getTimezoneName(): string {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
+    }
+
     private static padLeft(string: string, padAmount: number, padWith: string = '0'): string {
         if (string.length >= padAmount) {
             return string;
