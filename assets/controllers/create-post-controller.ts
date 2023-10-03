@@ -1,8 +1,21 @@
 import {Controller} from "@hotwired/stimulus";
 import TomSelect from "tom-select";
 import {DateHelper} from "../date-helper";
+import {useDebounce} from "stimulus-use";
+
+interface TitleExpressionResponse {
+    validCount: number;
+    invalid: string[];
+    title: string;
+}
 
 export default class extends Controller {
+    static debounces: string[] = ['checkTitleForExpressions'];
+
+    static values = {
+        parseTitleUrl: String,
+    };
+
     static targets = [
         'timezoneOffset',
         'communitySelect',
@@ -17,6 +30,11 @@ export default class extends Controller {
         'scheduleUnpinWrapper',
         'fileProviderWrapper',
         'fileSelect',
+        'titleInput',
+        'expressionTitleError',
+        'expressionTitleErrorVariables',
+        'expressionTitlePreviewWrapper',
+        'expressionTitlePreview',
     ];
 
     private timezoneOffsetTarget: HTMLInputElement;
@@ -32,8 +50,17 @@ export default class extends Controller {
     private scheduleUnpinWrapperTarget: HTMLDivElement;
     private fileProviderWrapperTarget: HTMLDivElement;
     private fileSelectTarget: HTMLInputElement;
+    private titleInputTarget: HTMLInputElement;
+    private expressionTitleErrorTarget: HTMLElement;
+    private expressionTitleErrorVariablesTarget: HTMLSpanElement;
+    private expressionTitlePreviewWrapperTarget: HTMLElement;
+    private expressionTitlePreviewTarget: HTMLElement;
+
+    private parseTitleUrlValue: string;
 
     public async connect(): Promise<void> {
+        useDebounce(this, {wait: 500});
+
         this.timezoneOffsetTarget.value = DateHelper.getTimezoneOffset();
 
         new TomSelect(this.communitySelectTarget, {
@@ -67,5 +94,35 @@ export default class extends Controller {
 
     public async toggleFileProvider(): Promise<void> {
         this.fileProviderWrapperTarget.hidden = !this.fileSelectTarget.files.length;
+    }
+
+    public async checkTitleForExpressions(): Promise<void> {
+        const response = await fetch(this.parseTitleUrlValue, {
+            method: 'POST',
+            body: JSON.stringify({
+                title: this.titleInputTarget.value,
+            }),
+        });
+        if (!response.ok) {
+            return;
+        }
+
+        const body: TitleExpressionResponse = await response.json();
+
+        if (!body.invalid.length) {
+            this.expressionTitleErrorTarget.hidden = true;
+        }
+        if (!body.validCount) {
+            this.expressionTitlePreviewWrapperTarget.hidden = true;
+        }
+
+        if (body.invalid.length) {
+            this.expressionTitleErrorVariablesTarget.innerHTML = body.invalid.map(item => `<code>${item}</code>`).join(', ');
+            this.expressionTitleErrorTarget.hidden = false;
+        }
+        if (body.validCount) {
+            this.expressionTitlePreviewTarget.innerText = body.title;
+            this.expressionTitlePreviewWrapperTarget.hidden = false;
+        }
     }
 }

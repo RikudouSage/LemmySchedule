@@ -13,6 +13,7 @@
         "regenerator-runtime": "^0.13.9",
         "sass": "^1.64.2",
         "sass-loader": "^13.0.0",
+        "stimulus-use": "^0.52.0",
         "ts-loader": "^9.0.0",
         "typescript": "^5.1.6",
         "webpack": "^5.74.0",
