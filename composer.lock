@@ -1527,16 +1527,16 @@
         },
         {
             "name": "rikudou/lemmy-api",
-            "version": "v0.3.1",
+            "version": "v0.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/RikudouSage/LemmyApi.git",
-                "reference": "e15ec9cb06ed6688ae2ea6381341df54e2d8803d"
+                "reference": "35f49e595b4c42f7ec74cfc320bdf883fddaf4d6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/RikudouSage/LemmyApi/zipball/e15ec9cb06ed6688ae2ea6381341df54e2d8803d",
-                "reference": "e15ec9cb06ed6688ae2ea6381341df54e2d8803d",
+                "url": "https://api.github.com/repos/RikudouSage/LemmyApi/zipball/35f49e595b4c42f7ec74cfc320bdf883fddaf4d6",
+                "reference": "35f49e595b4c42f7ec74cfc320bdf883fddaf4d6",
                 "shasum": ""
             },
             "require": {
@@ -1570,9 +1570,9 @@
             "description": "Communicate with Lemmy API from php",
             "support": {
                 "issues": "https://github.com/RikudouSage/LemmyApi/issues",
-                "source": "https://github.com/RikudouSage/LemmyApi/tree/v0.3.1"
+                "source": "https://github.com/RikudouSage/LemmyApi/tree/v0.3.2"
             },
-            "time": "2023-10-04T18:44:13+00:00"
+            "time": "2023-10-04T18:47:04+00:00"
         },
         {
             "name": "rikudou/psr6-dynamo-db",
