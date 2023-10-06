@@ -14,7 +14,7 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN apt-get update && \
     apt-get -y install libxml2-dev libonig-dev supervisor unzip && \
     rm -rf /var/lib/apt/lists/*
-RUN docker-php-ext-install intl opcache && \
+RUN docker-php-ext-install intl opcache pcntl && \
     pecl install redis && \
     docker-php-ext-enable redis
 RUN a2enmod rewrite
