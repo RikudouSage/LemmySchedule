@@ -29,7 +29,7 @@ final readonly class EventBridgeTransportFactory implements TransportFactoryInte
         return str_starts_with($dsn, 'eb://');
     }
 
-    private function getPrefix(string $dsn): string
+    public function getPrefix(string $dsn): string
     {
         return parse_url($dsn, PHP_URL_HOST) ?: throw new LogicException("Invalid DSN: {$dsn}");
     }
