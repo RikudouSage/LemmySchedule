@@ -246,6 +246,7 @@ final class PostController extends AbstractController
             'fileProviders' => [...$fileProviders],
             'defaultFileProvider' => $request->request->get('fileProvider'),
             'timezoneName' => $request->request->get('timezoneName'),
+            'checkForDuplicates' => $request->request->getBoolean('checkForDuplicates'),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -380,6 +381,7 @@ final class PostController extends AbstractController
                     unpinAt: $data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null,
                     fileProvider: $data['defaultFileProvider'],
                     timezoneName: $data['timezoneName'],
+                    checkForUrlDuplicates: $data['checkForDuplicates'],
                 ),
                 $dateTime,
             );

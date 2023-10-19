@@ -26,6 +26,7 @@ final readonly class CreatePostJob
         public ?DateTimeInterface $unpinAt = null,
         public ?string $fileProvider = null,
         public ?string $timezoneName = null,
+        public bool $checkForUrlDuplicates = false,
     ) {
     }
 
@@ -42,6 +43,7 @@ final readonly class CreatePostJob
         $data['unpinAt'] ??= null;
         $data['fileProvider'] ??= null;
         $data['timezoneName'] ??= null;
+        $data['checkForUrlDuplicates'] ??= false;
 
         foreach ($data as $property => $value) {
             $this->{$property} = $value;
