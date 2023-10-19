@@ -36,6 +36,8 @@ export default class extends Controller {
         'expressionTitleErrorVariables',
         'expressionTitlePreviewWrapper',
         'expressionTitlePreview',
+        'checkForDuplicatesWrapper',
+        'urlInput',
     ];
 
     private timezoneOffsetTarget: HTMLInputElement;
@@ -57,6 +59,8 @@ export default class extends Controller {
     private expressionTitleErrorVariablesTarget: HTMLSpanElement;
     private expressionTitlePreviewWrapperTarget: HTMLElement;
     private expressionTitlePreviewTarget: HTMLElement;
+    private checkForDuplicatesWrapperTarget: HTMLDivElement;
+    private urlInputTarget: HTMLInputElement;
 
     private parseTitleUrlValue: string;
 
@@ -78,6 +82,7 @@ export default class extends Controller {
         await this.toggleRecurring();
         await this.toggleScheduleUnpinSwitch();
         await this.toggleFileProvider();
+        await this.toggleDuplicityCheck();
     }
 
     public async toggleRecurring(): Promise<void> {
@@ -128,5 +133,9 @@ export default class extends Controller {
             this.expressionTitlePreviewTarget.innerText = body.title;
             this.expressionTitlePreviewWrapperTarget.hidden = false;
         }
+    }
+
+    public async toggleDuplicityCheck(): Promise<void> {
+        this.checkForDuplicatesWrapperTarget.hidden = !this.urlInputTarget.value.length;
     }
 }

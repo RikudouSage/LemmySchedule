@@ -38,7 +38,21 @@
                     </div>
                     <div class="form-group">
                         <label for="inputUrl">{{ "URL" | trans }}</label>
-                        <input id="inputUrl" class="form-control" type="url" name="url" value="{{ url|default('') }}"/>
+                        <input id="inputUrl" class="form-control" type="url" name="url" value="{{ url|default('') }}"
+                               {{ stimulus_target('create-post', 'urlInput') }}
+                                {{ stimulus_action('create-post', 'toggleDuplicityCheck') }} />
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post', 'checkForDuplicatesWrapper') }}>
+                        <div class="custom-control custom-switch">
+                            <input class="custom-control-input" type="checkbox" id="inputCheckForDuplicates"
+                                   name="checkForDuplicates"
+                                   {% if checkForDuplicates|default(false) %}checked{% endif %}
+                            />
+                            <label for="inputCheckForDuplicates"
+                                   class="custom-control-label">{{ "Check for duplicates" | trans }}</label>
+                            <br>
+                            <small>{{ "If turned on, posts from the last 24 hours in the target community will be checked and if the URL has already been posted, your post will not be created." | trans }}</small>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="file">{{ "Image" | trans }}</label>

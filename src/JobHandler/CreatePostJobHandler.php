@@ -12,9 +12,14 @@ use App\Service\CurrentUserService;
 use App\Service\JobManager;
 use App\Service\ScheduleExpressionParser;
 use App\Service\TitleExpressionReplacer;
+use DateInterval;
+use DateTimeImmutable;
 use DateTimeZone;
+use Rikudou\LemmyApi\Enum\ListingType;
 use Rikudou\LemmyApi\Enum\PostFeatureType;
+use Rikudou\LemmyApi\Enum\SortType;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
+use Rikudou\LemmyApi\LemmyApi;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -37,6 +42,11 @@ final readonly class CreatePostJobHandler
 
     public function __invoke(CreatePostJob $job): void
     {
+        $api = $this->apiFactory->get($job->instance, jwt: $job->jwt);
+        if ($this->hasDuplicates($job, $api)) {
+            return;
+        }
+
         $default = null;
         $chosenFileProvider = null;
         foreach ($this->fileProviders as $fileProvider) {
@@ -51,7 +61,6 @@ final readonly class CreatePostJobHandler
         assert($chosenFileProvider !== null);
 
         $imageUrl = null;
-        $api = $this->apiFactory->get($job->instance, jwt: $job->jwt);
         if ($imageId = $job->imageId) {
             $imageUrl = $chosenFileProvider->getLink($imageId, new User('fake_user', $job->instance, $job->jwt));
         }
@@ -110,5 +119,43 @@ final readonly class CreatePostJobHandler
                 pin: $job->pinToCommunity ? PinType::UnpinFromCommunity : PinType::UnpinFromInstance,
             ), $unpinAt);
         }
+    }
+
+    private function hasDuplicates(CreatePostJob $job, LemmyApi $api): bool
+    {
+        if (!$job->checkForUrlDuplicates) {
+            return false;
+        }
+        if (!$job->url) {
+            return false;
+        }
+
+        $minDate = (new DateTimeImmutable())->sub(new DateInterval('P1D'));
+        $page = 1;
+
+        do {
+            $posts = $api->post()->getPosts(
+                community: $job->community,
+                page: $page,
+                sort: SortType::New,
+                listingType: ListingType::All,
+            );
+            foreach ($posts as $post) {
+                if ($post->post->published < $minDate) {
+                    break 2;
+                }
+
+                if (!$post->post->url) {
+                    continue;
+                }
+
+                if (trim($post->post->url, '/') === trim($job->url, '/')) {
+                    return true;
+                }
+            }
+            ++$page;
+        } while (count($posts));
+
+        return false;
     }
 }
