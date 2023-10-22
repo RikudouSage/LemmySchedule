@@ -114,7 +114,6 @@ return (new PhpCsFixer\Config())
         'self_static_accessor' => true,
         'set_type_to_cast' => true,
         'simple_to_complex_string_variable' => true,
-        'simplified_null_return' => true,
         'single_line_comment_style' => true,
         'single_quote' => true,
         'standardize_not_equals' => true,

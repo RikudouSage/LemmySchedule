@@ -121,15 +121,39 @@ final class PostController extends AbstractController
         $postReportJobs = array_map(
             fn (Envelope $job) => $this->getJobArray($job, callbacks: [
                 'community' => static function (ReportUnreadPostsJob $job) {
+                    if ($job->community === null) {
+                        return null;
+                    }
                     $host = parse_url($job->community->actorId, PHP_URL_HOST);
 
                     return "!{$job->community->name}@{$host}";
                 },
-                'url' => static function (ReportUnreadPostsJob $job) {
+                'user' => static function (ReportUnreadPostsJob $job) {
+                    if ($job->person === null) {
+                        return null;
+                    }
+                    $host = parse_url($job->person->actorId, PHP_URL_HOST);
+
+                    return "@{$job->person->name}@{$host}";
+                },
+                'communityUrl' => static function (ReportUnreadPostsJob $job) {
+                    if ($job->community === null) {
+                        return null;
+                    }
                     $host = parse_url($job->community->actorId, PHP_URL_HOST);
                     $community = "{$job->community->name}@{$host}";
 
                     return "https://{$job->instance}/c/{$community}";
+                },
+                'userUrl' => static function (ReportUnreadPostsJob $job) {
+                    if ($job->person === null) {
+                        return null;
+                    }
+
+                    $host = parse_url($job->person->actorId, PHP_URL_HOST);
+                    $user = "{$job->person->name}@{$host}";
+
+                    return "https://{$job->instance}/u/{$user}";
                 },
                 'recurring' => static fn (ReportUnreadPostsJob $job) => $job->scheduleExpression !== null,
             ]),
@@ -398,6 +422,9 @@ final class PostController extends AbstractController
     #[Route('/create-unread-post-report', name: 'app.post.unread_post_report_create', methods: [Request::METHOD_GET])]
     public function createUnreadPostReport(bool $unreadPostsEnabled): Response
     {
+        $user = $this->getUser();
+        assert($user instanceof User);
+
         if (!$unreadPostsEnabled) {
             throw $this->createNotFoundException('Unread posts not enabled because a bot user is not configured');
         }
@@ -407,6 +434,9 @@ final class PostController extends AbstractController
             'selectedCommunities' => [],
             'recurring' => false,
             'scheduleDateTime' => '',
+            'username' => '',
+            'currentInstance' => $user->getInstance(),
+            'currentUsername' => $user->getUsername(),
         ]);
     }
 
@@ -433,6 +463,9 @@ final class PostController extends AbstractController
             'timezoneOffset' => $request->request->get('timezoneOffset'),
             'scheduler' => $request->request->all('scheduler'),
             'recurring' => $request->request->getBoolean('recurring'),
+            'username' => $request->request->get('username'),
+            'currentInstance' => $user->getInstance(),
+            'currentUsername' => $user->getUsername(),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -486,6 +519,23 @@ final class PostController extends AbstractController
             return $errorResponse();
         }
 
+        if (!count($communities) && !$data['username']) {
+            $this->addFlash('error', $translator->trans('You must provide either a community or a username (or both).'));
+
+            return $errorResponse();
+        }
+
+        $person = null;
+        if ($username = $data['username']) {
+            try {
+                $person = $api->user()->get($username);
+            } catch (LemmyApiException) {
+                $this->addFlash('error', $translator->trans('Could not find the specified user, are you sure they exist?'));
+
+                return $errorResponse();
+            }
+        }
+
         if ($data['recurring']) {
             $dateTime = $scheduleExpressionParser->getNextRunDate(
                 expression: $data['scheduler']['expression'],
@@ -494,12 +544,26 @@ final class PostController extends AbstractController
         } else {
             $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
         }
-        foreach ($communities as $community) {
+        if (count($communities)) {
+            foreach ($communities as $community) {
+                $jobManager->createJob(
+                    new ReportUnreadPostsJob(
+                        jwt: $user->getJwt(),
+                        instance: $user->getInstance(),
+                        community: $community,
+                        person: $person,
+                        scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
+                        scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
+                    ),
+                    $dateTime,
+                );
+            }
+        } else {
             $jobManager->createJob(
                 new ReportUnreadPostsJob(
                     jwt: $user->getJwt(),
                     instance: $user->getInstance(),
-                    community: $community,
+                    person: $person,
                     scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
                     scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
                 ),
