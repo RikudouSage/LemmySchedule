@@ -5,10 +5,6 @@
         } only %}
     {% endif %}
 
-    <div class="callout callout-warning">
-        <p>{{ "Note that recurring posts are currently in beta and might not work correctly." | trans }}</p>
-    </div>
-
     {{ "schedule.description.every" | trans({amount: this.amount}) }}
     <input name="scheduler[amount]" type="number" data-model="amount" min="1" max="{{ this.maxAmount }}"
            class="form-control-sm scheduler-amount-input"/>

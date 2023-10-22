@@ -154,7 +154,15 @@
                                 errorDeletingText: "There was an error when cancelling the job." | trans,
                             }) }}>
                                 <td>
-                                    {{ job.community }} (<a href="{{ job.url }}" target="_blank">{{ job.url }}</a>)
+                                    {% if job.user %}
+                                        <a href="{{ job.userUrl }}" target="_blank">{{ job.user }}</a>
+                                    {% endif %}
+                                    {% if job.user and job.community %}
+                                        {{ "at" | trans }}
+                                    {% endif %}
+                                    {% if job.community %}
+                                        <a href="{{ job.communityUrl }}" target="_blank">{{ job.community }}</a>
+                                    {% endif %}
                                 </td>
                                 <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
                                 <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>

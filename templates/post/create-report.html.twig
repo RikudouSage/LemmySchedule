@@ -6,6 +6,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
+                <p>{{ "You can specify either a community, a user, or both for the report." | trans }}</p>
                 <form method="post" enctype="multipart/form-data"
                       action="{{ path('app.post.unread_post_report_create.do') }}" {{ stimulus_controller('create-post-report') }}>
                     <div class="form-group">
@@ -19,6 +20,16 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label for="inputUsername">{{ "Username" | trans }}</label>
+                        <input type="text" class="form-control" name="username" id="inputUsername" value="{{ username }}" />
+                        <small>
+                            {{ "Use the username in format 'username@instance.tld', for example '{{currentUsername}}@{{currentInstance}}'." | trans({
+                                '{{currentInstance}}': currentInstance,
+                                '{{currentUsername}}': currentUsername,
+                            }) }}
+                        </small>
+                    </div>
+                    <div class="form-group">
                         <div class="custom-control custom-switch">
                             <input type="hidden" name="recurring" value="0"/>
                             <input class="custom-control-input" type="checkbox"
@@ -29,12 +40,12 @@
                         </div>
                     </div>
                     <div class="form-group" hidden {{ stimulus_target('create-post-report', 'oneTimeSchedule') }}>
-                        <label for="inputScheduleDateTime">{{ "When do you want to post?" | trans }}</label>
+                        <label for="inputScheduleDateTime">{{ "When do you want to receive the report?" | trans }}</label>
                         <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
                                type="datetime-local" value="{{ scheduleDateTime }}"/>
                     </div>
                     <div class="form-group" hidden {{ stimulus_target('create-post-report', 'recurringSchedule') }}>
-                        <label>{{ "When do you want to post?" | trans }}</label>
+                        <label>{{ "When do you want to receive the report?" | trans }}</label>
                         <div>
                             {{ component('ScheduleComponent', {
                                 amount: scheduler.amount|default(1),
