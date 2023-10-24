@@ -88,7 +88,12 @@ final class ScheduleExpressionParser
             case ScheduleType::Week:
                 $currentDay = Weekday::from((int) $dateTime->format(self::DAY_OF_WEEK));
                 $diff = $currentDay->value - $dayOfWeek->value;
-                $dateTime = $dateTime->sub(new DateInterval("P{$diff}D"));
+                $modifierFunction = $dateTime->sub(...);
+                if ($diff < 0) {
+                    $diff = abs($diff);
+                    $modifierFunction = $dateTime->add(...);
+                }
+                $dateTime = $modifierFunction(new DateInterval("P{$diff}D"));
                 if ($weekOrdinal !== self::ALL) {
                     $daysToAdd = $weekOrdinal * 7;
                     $dateTime = $dateTime->add(new DateInterval("P{$daysToAdd}D"));
