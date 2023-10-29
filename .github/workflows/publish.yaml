@@ -43,6 +43,7 @@ jobs:
         run: |
           export ASSETS_BUCKET=$(aws cloudformation describe-stacks --stack-name LemmySchedule-prod --query "Stacks[0].Outputs[?OutputKey=='AssetsBucket'].OutputValue" --output=text --region $AWS_REGION)
           aws s3 sync public/build s3://$ASSETS_BUCKET/build --delete
+          aws s3 sync public/icon s3://$ASSETS_BUCKET/icon --delete
       - name: Clear CDN cache
         run: |
           export CDN_ID=$(aws cloudformation describe-stacks --stack-name LemmySchedule-prod --query "Stacks[0].Outputs[?OutputKey=='Cdn'].OutputValue" --output=text --region $AWS_REGION)
