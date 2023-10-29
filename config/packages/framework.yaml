@@ -22,6 +22,9 @@ framework:
     trusted_proxies: '127.0.0.1'
     # trust "X-Forwarded-*" headers coming from API Gateway
     trusted_headers: [ 'x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-host' ]
+    assets:
+        base_urls:
+            - '%env(ASSETS_URL)%'
 
 when@test:
     framework:
