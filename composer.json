@@ -21,6 +21,7 @@
         "rikudou/psr6-dynamo-db-bundle": "^4.0",
         "symfony/amazon-sqs-messenger": "6.3.*",
         "symfony/apache-pack": "^1.0",
+        "symfony/asset": "6.3.*",
         "symfony/cache": "6.3.*",
         "symfony/console": "6.3.*",
         "symfony/dotenv": "6.3.*",
