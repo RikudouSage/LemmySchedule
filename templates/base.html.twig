@@ -84,6 +84,16 @@
                                 </p>
                             </a>
                         </li>
+                        {% feature 'community_groups' %}
+                            <li class="nav-item">
+                                <a href="{{ path('app.community_groups.list') }}" class="nav-link">
+                                    <i class="nav-icon fas fa-layer-group"></i>
+                                    <p>
+                                        {{ "Community groups" | trans }}
+                                    </p>
+                                </a>
+                            </li>
+                        {% endfeature %}
                         <li class="nav-item">
                             <a href="{{ path('app.post.pin') }}" class="nav-link">
                                 <i class="nav-icon fas fa-map-pin"></i>

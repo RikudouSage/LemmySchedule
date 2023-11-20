@@ -16,6 +16,7 @@ use App\Job\PinUnpinPostJobV2;
 use App\Job\ReportUnreadPostsJob;
 use App\JobStamp\MetadataStamp;
 use App\Lemmy\LemmyApiFactory;
+use App\Service\CommunityGroupManager;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
 use App\Service\ScheduleExpressionParser;
@@ -220,6 +221,7 @@ final class PostController extends AbstractController
     public function createPost(
         #[TaggedIterator('app.file_provider')]
         iterable $fileProviders,
+        CommunityGroupManager $groupManager,
     ): Response {
         $fileProviders = [...$fileProviders];
         $default = (array_values(array_filter($fileProviders, static fn (FileProvider $fileProvider) => $fileProvider->isDefault()))[0] ?? null)?->getId();
@@ -234,6 +236,7 @@ final class PostController extends AbstractController
             'selectedLanguage' => Language::Undetermined,
             'fileProviders' => [...$fileProviders],
             'defaultFileProvider' => $default,
+            'groups' => [...$groupManager->getGroups()],
         ]);
     }
 
@@ -248,6 +251,7 @@ final class PostController extends AbstractController
         ScheduleExpressionParser $scheduleExpressionParser,
         #[TaggedIterator('app.file_provider')]
         iterable $fileProviders,
+        CommunityGroupManager $groupManager,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -289,6 +293,7 @@ final class PostController extends AbstractController
             ...$data,
             'communities' => $this->getCommunities(),
             'languages' => Language::cases(),
+            'groups' => [...$groupManager->getGroups()],
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
 
         if ($image && $data['url']) {
@@ -326,8 +331,28 @@ final class PostController extends AbstractController
             return $errorResponse();
         }
 
+        foreach ($data['selectedCommunities'] as $key => $selectedCommunity) {
+            if (str_starts_with($selectedCommunity, 'group***')) {
+                $name = substr($selectedCommunity, strlen('group***'));
+                $group = $groupManager->getGroup($name);
+                if ($group === null) {
+                    $this->addFlash('error', $translator->trans('Could not find group called "{group}"', ['{group}' => $group]));
+
+                    return $errorResponse();
+                }
+                unset($data['selectedCommunities'][$key]);
+                $groupCommunities = $group->communities;
+                foreach ($groupCommunities as $groupCommunity) {
+                    $data['selectedCommunities'][] = $groupCommunity->id;
+                }
+            }
+        }
+
         $communities = $data['selectedCommunities'];
-        $communities = array_map(static function (string $community) {
+        $communities = array_map(static function (string|int $community) {
+            if (is_int($community)) {
+                return $community;
+            }
             if (str_starts_with($community, '!')) {
                 $community = substr($community, 1);
             }
@@ -336,7 +361,7 @@ final class PostController extends AbstractController
         }, $communities);
 
         try {
-            $communities = array_map(static fn (string $community) => $api->community()->get($community), $communities);
+            $communities = array_map(static fn (string|int $community) => $api->community()->get($community), $communities);
         } catch (LemmyApiException) {
             $this->addFlash('error', $translator->trans("Couldn't find one or more of the communities, are you sure all of them exist?"));
 

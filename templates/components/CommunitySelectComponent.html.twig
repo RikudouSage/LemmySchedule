@@ -1,0 +1,8 @@
+<div {{ attributes.defaults(stimulus_controller('community-select-component')) }}>
+    <select multiple id="{{ this.id }}" name="{{ this.name }}[]" {{ stimulus_target('community-select-component', 'select') }}>
+        <option></option>
+        {% for communityOption in this.communities %}
+            <option {% if communityOption in this.selectedCommunities %}selected{% endif %}>{{ communityOption }}</option>
+        {% endfor %}
+    </select>
+</div>

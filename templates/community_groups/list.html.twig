@@ -1,0 +1,53 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "Community groups" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">{{ "Community groups" | trans }}</h3>
+            </div>
+            <div class="card-body">
+                <p>{{ "Here you can define your own community groups if you often post the same content to the same communities." | trans }}</p>
+                <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th>{{ "Title" | trans }}</th>
+                        <th>{{ "Communities" | trans }}</th>
+                        <th>{{ "Actions" | trans }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td colspan="3">
+                            <a class="btn btn-primary" href="{{ path('app.community_groups.add') }}">{{ "Add a community group" | trans }}</a>
+                        </td>
+                    </tr>
+                    {% for group in groups %}
+                        <tr>
+                            <td>{{ group.name }}</td>
+                            <td>
+                                <ul>
+                                    {% for community in group %}
+                                        <li><a target="_blank" href="{{ community.actorId }}">{{ community.actorId }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>
+                                <a class="btn btn-danger" href="{{ path('app.community_groups.delete', {name: group.name}) }}">{{ "Delete" | trans }}</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="3">
+                                {{ "You have no community groups." | trans }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

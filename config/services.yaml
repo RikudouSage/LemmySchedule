@@ -61,3 +61,7 @@ services:
     App\Service\TitleExpressionLanguage:
 
     Symfony\Component\ExpressionLanguage\ExpressionLanguage: '@App\Service\TitleExpressionLanguage'
+
+    App\Service\FeatureFlags:
+        arguments:
+            - community_groups: '%env(bool:FLAG_COMMUNITY_GROUPS)%'

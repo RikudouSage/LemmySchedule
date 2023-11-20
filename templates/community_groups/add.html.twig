@@ -1,0 +1,30 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "Add a community group" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{{ path('app.community_groups.add.do') }}">
+                    <div class="form-group">
+                        <label for="inputTitle">{{ "Title" | trans }}</label>
+                        <input id="inputTitle" class="form-control" type="text" name="title" value="{{ title|default('') }}" autofocus />
+                    </div>
+                    <div class="form-group">
+                        <label for="inputCommunities">{{ "Communities" | trans }}</label>
+                        {{ component('CommunitySelectComponent', {
+                            id: 'inputCommunities',
+                            name: 'communities',
+                            selectedCommunities: selectedCommunities|default([]),
+                        }) }}
+                    </div>
+
+                    <button class="btn btn-primary" type="submit">
+                        {{ "Create" | trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

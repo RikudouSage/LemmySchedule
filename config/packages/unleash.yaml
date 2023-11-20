@@ -1,0 +1,10 @@
+# Default configuration for extension with alias: "unleash_symfony_client"
+unleash_symfony_client:
+    # Whether to enable communication with Unleash server or not. If you set it to false you must also provide a bootstrap.
+    fetching_enabled:     false
+
+    # Enable or disable twig function/filter/tests
+    twig:
+        # Enables the "feature" twig tag
+        tags:                 true
+

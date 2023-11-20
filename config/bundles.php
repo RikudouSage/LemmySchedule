@@ -16,4 +16,5 @@ return [
     Symfony\UX\TwigComponent\TwigComponentBundle::class => ['all' => true],
     Symfony\UX\LiveComponent\LiveComponentBundle::class => ['all' => true],
     Bref\Symfony\Messenger\BrefMessengerBundle::class => ['all' => true],
+    Unleash\Client\Bundle\UnleashSymfonyClientBundle::class => ['all' => true],
 ];
