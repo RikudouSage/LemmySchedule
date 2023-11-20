@@ -100,6 +100,7 @@ in `.env.local` file.
 | `IMGUR_ACCESS_TOKEN`        | set to Imgur access token if you want to enable Imgur                                                                                                 |                                                      | no           |
 | `UNREAD_POSTS_BOT_JWT`      | the JWT token for the bot user that will send reports with unread posts - if it's not provided, the whole unread posts functionality will be disabled |                                                      |              |
 | `UNREAD_POSTS_BOT_INSTANCE` | the instance the bot for unread post reports is on - if it's not provided, the whole unread posts functionality will be disabled                      |                                                      |              |
+| `FLAG_COMMUNITY_GROUPS`     | whether community groups, an experimental feature, should be enabled                                                                                  | 0                                                    | no           |
 
 #### Job transports
 
@@ -200,6 +201,7 @@ You may set these environment variables as well (as real environment variables, 
 - `IMGUR_ACCESS_TOKEN`
 - `UNREAD_POSTS_BOT_JWT`
 - `UNREAD_POSTS_BOT_INSTANCE`
+- `FLAG_COMMUNITY_GROUPS`
 
 ### Deploying
 
@@ -234,6 +236,7 @@ Other variables which might need changing:
 - `IMGUR_ACCESS_TOKEN` - the access token to use with Imgur, leave empty to not support Imgur
 - `UNREAD_POSTS_BOT_JWT` - JWT token of the bot user that will send unread post reports
 - `UNREAD_POSTS_BOT_INSTANCE` - the instance of the aforementioned bot user
+- `FLAG_COMMUNITY_GROUPS` - whether to enable community groups, an experimental feature
 
 ### Volumes
 
