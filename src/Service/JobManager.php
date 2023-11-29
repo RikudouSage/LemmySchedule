@@ -80,14 +80,22 @@ final readonly class JobManager
         $cacheItemList = $this->cache->getItem("job_list_{$this->getUserIdentifier()}");
         $list = $cacheItemList->isHit() ? $cacheItemList->get() : [];
 
+        $changed = false;
         $result = [];
-        foreach ($list as $cacheKey) {
+        foreach ($list as $index => $cacheKey) {
             $cacheItem = $this->cache->getItem($cacheKey);
             if (!$cacheItem->isHit()) {
+                unset($list[$index]);
+                $changed = true;
                 continue;
             }
 
             $result[] = $cacheItem->get();
+        }
+        if ($changed) {
+            $list = array_values($list);
+            $cacheItemList->set($list);
+            $this->cache->save($cacheItemList);
         }
 
         return $result;
