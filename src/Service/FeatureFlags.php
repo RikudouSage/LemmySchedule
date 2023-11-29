@@ -34,7 +34,7 @@ final readonly class FeatureFlags implements BootstrapProvider
                     [
                         'name' => 'userWithId',
                         'parameters' => [
-                            'userIds' => 'rikudou@lemmings.world',
+                            'userIds' => 'rikudou@lemmings.world,otter@lemmy.ca',
                         ],
                     ],
                 ],
