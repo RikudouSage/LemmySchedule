@@ -39,7 +39,7 @@ final readonly class CommunityGroupManager
             yield new CommunityGroup(
                 name: $group['name'],
                 communities: array_map(
-                    static fn (int $id) => $api->community()->get($id),
+                    static fn (int $id) => $api->community()->get($id)->community,
                     $group['community_ids'],
                 ),
             );

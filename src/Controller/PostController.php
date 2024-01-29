@@ -30,6 +30,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
+use Rikudou\LemmyApi\Response\View\CommunityView;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -361,7 +362,7 @@ final class PostController extends AbstractController
         }, $communities);
 
         try {
-            $communities = array_map(static fn (string|int $community) => $api->community()->get($community), $communities);
+            $communities = array_map(static fn (string|int $community) => $api->community()->get($community)->community, $communities);
         } catch (LemmyApiException) {
             $this->addFlash('error', $translator->trans("Couldn't find one or more of the communities, are you sure all of them exist?"));
 
@@ -537,7 +538,7 @@ final class PostController extends AbstractController
         }, $communities);
 
         try {
-            $communities = array_map(static fn (string $community) => $api->community()->get($community), $communities);
+            $communities = array_map(static fn (string $community) => $api->community()->get($community)->community, $communities);
         } catch (LemmyApiException) {
             $this->addFlash('error', $translator->trans("Couldn't find one or more of the communities, are you sure all of them exist?"));
 

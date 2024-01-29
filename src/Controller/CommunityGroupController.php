@@ -74,7 +74,7 @@ final class CommunityGroupController extends AbstractController
         }, $communities);
 
         try {
-            $communities = array_map(static fn (string $community) => $api->community()->get($community), $communities);
+            $communities = array_map(static fn (string $community) => $api->community()->get($community)->community, $communities);
         } catch (LemmyApiException) {
             $this->addFlash('error', $translator->trans("Couldn't find one or more of the communities, are you sure all of them exist?"));
 
