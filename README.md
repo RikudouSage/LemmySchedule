@@ -102,6 +102,8 @@ in `.env.local` file.
 | `UNREAD_POSTS_BOT_INSTANCE` | the instance the bot for unread post reports is on - if it's not provided, the whole unread posts functionality will be disabled                                                             |                                                      |              |
 | `DEFAULT_POST_LANGUAGE`     | the numerical ID of the language that will be preselected when scheduling a post. For list of IDs see [this enum](https://github.com/RikudouSage/LemmyApi/blob/master/src/Enum/Language.php) | 0                                                    | **yes**      |
 | `FLAG_COMMUNITY_GROUPS`     | whether community groups, an experimental feature, should be enabled                                                                                                                         | 0                                                    | no           |
+| `SOURCE_URL`                | the URL of the source code, used for new version checks and for a footer link - if you plan on maintaining a fork, you can change it to your fork URL                                        | https://github.com/RikudouSage/LemmySchedule         | **yes**      |
+| `NEW_VERSION_CHECK`         | set to 1 or 0 to enable or disable checks for a new version                                                                                                                                  | 1                                                    | **yes**      |
 
 #### Job transports
 
