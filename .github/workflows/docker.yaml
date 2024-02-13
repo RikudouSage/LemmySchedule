@@ -32,6 +32,10 @@ jobs:
         run: composer install --no-dev --no-scripts
       - name: Setup js dependencies
         run: yarn install
+      - name: Create version file
+        run: 'echo -e "parameters:\n  app.current_version: $VERSION" > config/packages/version.yaml'
+        env:
+          VERSION: ${{ steps.extract_version.outputs.result }}
       - name: Build assets
         run: yarn build
       - name: Remove unneeded files
