@@ -32,6 +32,7 @@ use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Rikudou\LemmyApi\Response\View\CommunityView;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -222,6 +223,8 @@ final class PostController extends AbstractController
     public function createPost(
         #[TaggedIterator('app.file_provider')]
         iterable $fileProviders,
+        #[Autowire('%app.default_post_language%')]
+        int $defaultLanguage,
         CommunityGroupManager $groupManager,
     ): Response {
         $fileProviders = [...$fileProviders];
@@ -234,7 +237,7 @@ final class PostController extends AbstractController
             'communities' => $this->getCommunities(),
             'selectedCommunities' => [],
             'languages' => Language::cases(),
-            'selectedLanguage' => Language::Undetermined,
+            'selectedLanguage' => Language::tryFrom($defaultLanguage) ?? Language::Undetermined,
             'fileProviders' => [...$fileProviders],
             'defaultFileProvider' => $default,
             'groups' => [...$groupManager->getGroups()],
@@ -253,6 +256,8 @@ final class PostController extends AbstractController
         #[TaggedIterator('app.file_provider')]
         iterable $fileProviders,
         CommunityGroupManager $groupManager,
+        #[Autowire('%app.default_post_language%')]
+        int $defaultLanguage,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -267,7 +272,7 @@ final class PostController extends AbstractController
             'timezoneOffset' => $request->request->get('timezoneOffset'),
             'pinToCommunity' => $request->request->getBoolean('pinToCommunity'),
             'pinToInstance' => $request->request->getBoolean('pinToInstance'),
-            'selectedLanguage' => Language::tryFrom($request->request->getInt('language')) ?? Language::Undetermined,
+            'selectedLanguage' => Language::tryFrom($request->request->getInt('language')) ?? Language::tryFrom($defaultLanguage) ?? Language::Undetermined,
             'scheduler' => $request->request->all('scheduler'),
             'recurring' => $request->request->getBoolean('recurring'),
             'scheduleUnpin' => $request->request->getBoolean('scheduleUnpin'),
