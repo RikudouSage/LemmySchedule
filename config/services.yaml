@@ -6,6 +6,7 @@
 parameters:
     app.default_instance: '%env(DEFAULT_INSTANCE)%'
     app.single_instance: '%env(bool:SINGLE_INSTANCE_MODE)%'
+    app.default_post_language: '%env(int:DEFAULT_POST_LANGUAGE)%'
 
     app.file_uploader.local.path: '%env(resolve:LOCAL_FILE_UPLOADER_PATH)%'
     app.file_uploader.s3.bucket: '%env(S3_FILE_UPLOADER_BUCKET)%'
