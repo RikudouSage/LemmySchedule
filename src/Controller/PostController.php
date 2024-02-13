@@ -30,7 +30,6 @@ use Psr\Cache\CacheItemPoolInterface;
 use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
-use Rikudou\LemmyApi\Response\View\CommunityView;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;

@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - v*
 
 jobs:
   publish:
@@ -20,7 +22,18 @@ jobs:
       IMGUR_ACCESS_TOKEN: ${{ secrets.IMGUR_ACCESS_TOKEN }}
       UNREAD_POSTS_BOT_JWT: ${{ secrets.UNREAD_POSTS_BOT_JWT }}
       UNREAD_POSTS_BOT_INSTANCE: lemmings.world
+      NEW_VERSION_CHECK: 0
     steps:
+      - name: Extract Version Name
+        id: extract_version
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            if (context.payload.ref.startsWith('refs/tags/')) {
+              return context.payload.ref.replace(/refs\/tags\/v/, '');
+            }
+            return 'dev';
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -33,6 +46,10 @@ jobs:
         run: composer install --no-dev --no-scripts
       - name: Setup js dependencies
         run: yarn install
+      - name: Create version file
+        run: 'echo -e "parameters:\n  app.current_version: $VERSION" > config/packages/version.yaml'
+        env:
+          VERSION: ${{ steps.extract_version.outputs.result }}
       - name: Build assets
         run: yarn build
       - name: Prepare cache

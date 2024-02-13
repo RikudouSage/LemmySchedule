@@ -1,5 +1,8 @@
 twig:
     default_path: '%kernel.project_dir%/templates'
+    globals:
+        sourceUrl: '%app.source_url%'
+        appVersion: '%app.current_version%'
 
 when@test:
     twig:

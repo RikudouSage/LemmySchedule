@@ -1,0 +1,2 @@
+parameters:
+  app.current_version: dev

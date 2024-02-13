@@ -53,6 +53,7 @@ provider:
         UNREAD_POSTS_BOT_JWT: ${env:UNREAD_POSTS_BOT_JWT, ''}
         UNREAD_POSTS_BOT_INSTANCE: ${env:UNREAD_POSTS_BOT_INSTANCE, ''}
         ASSETS_URL: https://assets.${self:custom.Domain}
+        NEW_VERSION_CHECK: ${env:NEW_VERSION_CHECK, '1'}
 
 plugins:
   - ./vendor/bref/bref
