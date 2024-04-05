@@ -42,7 +42,6 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use Twig\Environment;
 
 #[Route('/post')]
 final class PostController extends AbstractController
@@ -763,7 +762,6 @@ final class PostController extends AbstractController
 
     #[Route('/ajax/new-comment-box', name: 'app.post.ajax.new_comment_box', methods: [Request::METHOD_POST])]
     public function getNewCommentBox(
-        Environment $twig,
         Request $request,
     ): Response {
         $json = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
@@ -771,9 +769,10 @@ final class PostController extends AbstractController
         $name = $json['name'] ?? throw new BadRequestHttpException('Missing required parameters');
         $inputId = $json['inputId'] ?? throw new BadRequestHttpException('Missing required parameters');
 
-        $template = $twig->createTemplate("{{component('CommentBoxComponent', {name: '{$name}', inputId: '{$inputId}'})}}");
-
-        return new Response($template->render());
+        return $this->render('ajax/new-comment-box.html.twig', [
+            'name' => $name,
+            'inputId' => $inputId,
+        ]);
     }
 
     /**
