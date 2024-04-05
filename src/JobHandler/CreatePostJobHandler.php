@@ -94,6 +94,10 @@ final readonly class CreatePostJobHandler
             }
         }
 
+        foreach ($job->comments as $comment) {
+            $api->comment()->create(post: $post->post, content: $comment);
+        }
+
         if ($expression = $job->scheduleExpression) {
             sleep(1);
             assert($job->scheduleTimezone !== null);

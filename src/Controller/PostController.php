@@ -42,6 +42,7 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Twig\Environment;
 
 #[Route('/post')]
 final class PostController extends AbstractController
@@ -280,6 +281,7 @@ final class PostController extends AbstractController
             'defaultFileProvider' => $request->request->get('fileProvider'),
             'timezoneName' => $request->request->get('timezoneName'),
             'checkForDuplicates' => $request->request->getBoolean('checkForDuplicates'),
+            'comments' => $request->request->all('comments'),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -436,6 +438,7 @@ final class PostController extends AbstractController
                     fileProvider: $data['defaultFileProvider'],
                     timezoneName: $data['timezoneName'],
                     checkForUrlDuplicates: $data['checkForDuplicates'],
+                    comments: $data['comments'],
                 ),
                 $dateTime,
             );
@@ -756,6 +759,21 @@ final class PostController extends AbstractController
         }
 
         return new JsonResponse($post);
+    }
+
+    #[Route('/ajax/new-comment-box', name: 'app.post.ajax.new_comment_box', methods: [Request::METHOD_POST])]
+    public function getNewCommentBox(
+        Environment $twig,
+        Request $request,
+    ): Response {
+        $json = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
+
+        $name = $json['name'] ?? throw new BadRequestHttpException('Missing required parameters');
+        $inputId = $json['inputId'] ?? throw new BadRequestHttpException('Missing required parameters');
+
+        $template = $twig->createTemplate("{{component('CommentBoxComponent', {name: '{$name}', inputId: '{$inputId}'})}}");
+
+        return new Response($template->render());
     }
 
     /**

@@ -9,6 +9,7 @@
                 <form method="post" enctype="multipart/form-data"
                       action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post', {
                         parseTitleUrl: path('app.post.ajax.title_expression'),
+                        newCommentBoxUrl: path('app.post.ajax.new_comment_box'),
                       }) }}>
                     <div class="form-group">
                         <label for="inputTitle">{{ "Title" | trans }}</label>
@@ -156,6 +157,39 @@
                             <label for="inputRecurring" class="custom-control-label">{{ "Recurring?" | trans }}</label>
                         </div>
                     </div>
+
+
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input class="custom-control-input" type="checkbox" id="inputAddComments"
+                                    {{ stimulus_target('create-post', 'addCommentsToggle') }}
+                                    {{ stimulus_action('create-post', 'toggleCommentsWrapper') }}
+                                    {% if comments|default([])|length %}checked{% endif %}
+                            />
+                            <label for="inputAddComments" class="custom-control-label">{{ "Add comments" | trans }}</label>
+                            <small>({{ "The comments will be added after posting" | trans }})</small>
+                        </div>
+                    </div>
+                    <div class="form-group" hidden {{ stimulus_target('create-post', 'addCommentsWrapper') }}>
+                        {% for comment in comments|default([]) %}
+                            {{ component('CommentBoxComponent', {
+                                comment: comment,
+                                name: 'comments[]',
+                                inputId: "comment" ~ loop.index,
+                            }) }}
+                        {% else %}
+                            <p>
+                                {{ "No comments created, press the button below add a new one" | trans }}
+                            </p>
+                        {% endfor %}
+                        <button
+                                class="btn btn-primary"
+                                type="button"
+                                {{ stimulus_action('create-post', 'addCommentBox') }}
+                                {{ stimulus_target('create-post', 'addCommentButton') }}
+                        >{{ "Add comment" | trans }}</button>
+                    </div>
+
                     <div class="form-group" hidden {{ stimulus_target('create-post', 'oneTimeSchedule') }}>
                         <label for="inputScheduleDateTime">{{ "When do you want to post?" | trans }}</label>
                         <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"

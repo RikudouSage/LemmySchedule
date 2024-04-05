@@ -14,6 +14,7 @@ export default class extends Controller {
 
     static values = {
         parseTitleUrl: String,
+        newCommentBoxUrl: String,
     };
 
     static targets = [
@@ -38,6 +39,9 @@ export default class extends Controller {
         'expressionTitlePreview',
         'checkForDuplicatesWrapper',
         'urlInput',
+        'addCommentsWrapper',
+        'addCommentsToggle',
+        'addCommentButton',
     ];
 
     private timezoneOffsetTarget: HTMLInputElement;
@@ -61,8 +65,12 @@ export default class extends Controller {
     private expressionTitlePreviewTarget: HTMLElement;
     private checkForDuplicatesWrapperTarget: HTMLDivElement;
     private urlInputTarget: HTMLInputElement;
+    private addCommentsWrapperTarget: HTMLDivElement;
+    private addCommentsToggleTarget: HTMLInputElement;
+    private addCommentButtonTarget: HTMLButtonElement;
 
     private parseTitleUrlValue: string;
+    private newCommentBoxUrlValue: string;
 
     public async connect(): Promise<void> {
         useDebounce(this, {wait: 500});
@@ -83,6 +91,7 @@ export default class extends Controller {
         await this.toggleScheduleUnpinSwitch();
         await this.toggleFileProvider();
         await this.toggleDuplicityCheck();
+        await this.toggleCommentsWrapper();
     }
 
     public async toggleRecurring(): Promise<void> {
@@ -137,5 +146,30 @@ export default class extends Controller {
 
     public async toggleDuplicityCheck(): Promise<void> {
         this.checkForDuplicatesWrapperTarget.hidden = !this.urlInputTarget.value.length;
+    }
+
+    public async toggleCommentsWrapper(): Promise<void> {
+        this.addCommentsWrapperTarget.hidden = !this.addCommentsToggleTarget.checked;
+    }
+
+    public async addCommentBox(): Promise<void> {
+        const response = await fetch(this.newCommentBoxUrlValue, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: 'comments[]',
+                inputId: 'comment' + Math.random(),
+            }),
+        });
+        const html = await response.text();
+        const parser = new DOMParser();
+        const document = parser.parseFromString(html, 'text/html');
+
+        this.addCommentsWrapperTarget.insertBefore(document.body.firstChild, this.addCommentButtonTarget);
+    }
+
+    public async removeComment(event: Event): Promise<void> {
+        const target = event.currentTarget as HTMLElement;
+        target.parentElement.remove();
+        console.log(event);
     }
 }

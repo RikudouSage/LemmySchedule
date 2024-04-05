@@ -1,0 +1,14 @@
+<div class="form-group">
+    <hr>
+    {% if inputId %}
+        <label for="{{ inputId }}">{{ "Comment" | trans }}</label>
+    {% endif %}
+    <button type="button" class="btn btn-danger" {{ stimulus_action('create-post', 'removeComment') }}><i class="fa fa-times"></i></button>
+    <br><br>
+    <textarea
+            class="form-control"
+            name="{{ name }}"
+            {% if inputId %}id="{{ inputId }}"{% endif %}
+    >{{ comment }}</textarea>
+    <hr>
+</div>

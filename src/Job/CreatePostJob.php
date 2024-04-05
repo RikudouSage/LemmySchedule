@@ -27,6 +27,7 @@ final readonly class CreatePostJob
         public ?string $fileProvider = null,
         public ?string $timezoneName = null,
         public bool $checkForUrlDuplicates = false,
+        public array $comments = [],
     ) {
     }
 
@@ -44,6 +45,7 @@ final readonly class CreatePostJob
         $data['fileProvider'] ??= null;
         $data['timezoneName'] ??= null;
         $data['checkForUrlDuplicates'] ??= false;
+        $data['comments'] ??= [];
 
         foreach ($data as $property => $value) {
             $this->{$property} = $value;
