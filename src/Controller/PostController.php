@@ -385,7 +385,9 @@ final class PostController extends AbstractController
             ),
             $communities,
         );
-        $communityLanguages = array_map(static fn (int $language) => Language::from($language), array_intersect(...$communityLanguages));
+        if (count($communityLanguages)) {
+            $communityLanguages = array_map(static fn (int $language) => Language::from($language), array_intersect(...$communityLanguages));
+        }
         $userLanguages = $site->myUser?->discussionLanguages ?? null;
 
         if (count($instanceLanguages) && !in_array($selectedLanguage, $instanceLanguages, true)) {
