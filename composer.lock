@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "47caaf3bcc0f99538b221143b829b7f6",
+    "content-hash": "e6fb759b315d6ece98a834fb9f56e38b",
     "packages": [
         {
             "name": "async-aws/core",
@@ -1579,16 +1579,16 @@
         },
         {
             "name": "rikudou/lemmy-api",
-            "version": "v0.7.0",
+            "version": "v0.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/RikudouSage/LemmyApi.git",
-                "reference": "d5a1a09009814ad279ba8a935586b3d939ba0a9e"
+                "reference": "3de8c6975c1972c2e150b863f0469e5f13dbf40b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/RikudouSage/LemmyApi/zipball/d5a1a09009814ad279ba8a935586b3d939ba0a9e",
-                "reference": "d5a1a09009814ad279ba8a935586b3d939ba0a9e",
+                "url": "https://api.github.com/repos/RikudouSage/LemmyApi/zipball/3de8c6975c1972c2e150b863f0469e5f13dbf40b",
+                "reference": "3de8c6975c1972c2e150b863f0469e5f13dbf40b",
                 "shasum": ""
             },
             "require": {
@@ -1622,9 +1622,9 @@
             "description": "Communicate with Lemmy API from php",
             "support": {
                 "issues": "https://github.com/RikudouSage/LemmyApi/issues",
-                "source": "https://github.com/RikudouSage/LemmyApi/tree/v0.7.0"
+                "source": "https://github.com/RikudouSage/LemmyApi/tree/v0.7.1"
             },
-            "time": "2024-06-12T12:55:31+00:00"
+            "time": "2024-06-12T21:53:07+00:00"
         },
         {
             "name": "rikudou/psr6-dynamo-db",
