@@ -12,7 +12,7 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 RUN apt-get update && \
-    apt-get -y install libxml2-dev libonig-dev supervisor unzip && \
+    apt-get -y install libxml2-dev libonig-dev libmagickwand-dev supervisor unzip wget && \
     rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install intl opcache pcntl && \
     pecl install redis && \
