@@ -25,12 +25,15 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use Exception;
 use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
 use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\BrowserKit\HttpBrowser;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -41,6 +44,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/post')]
@@ -774,6 +778,36 @@ final class PostController extends AbstractController
         return $this->render('ajax/new-comment-box.html.twig', [
             'name' => $name,
             'inputId' => $inputId,
+        ]);
+    }
+
+    #[Route('/ajax/page-title', name: 'app.post.ajax.page_title', methods: [Request::METHOD_POST])]
+    public function getPageTitle(
+        Request $request,
+        HttpBrowser $browser,
+    ): JsonResponse {
+        $title = null;
+        try {
+            $json = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
+            if (!isset($json['url'])) {
+                throw new RuntimeException('URL is missing');
+            }
+
+            $page = $browser->request(Request::METHOD_GET, $json['url']);
+            $ogTitleTag = $page->filter('meta[property="og:titlee"]');
+            $titleTag = $page->filter('title');
+
+            if ($ogTitleTag->count()) {
+                $title = $ogTitleTag->first()->attr('content');
+            } else if ($titleTag->count()) {
+                $title = $titleTag->first()->text();
+            }
+        } catch (Exception $e) {
+            error_log('Error getting title: ' . $e->getMessage());
+        }
+
+        return new JsonResponse([
+            'title' => $title,
         ]);
     }
 
