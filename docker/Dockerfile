@@ -16,7 +16,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install intl opcache pcntl && \
     pecl install redis && \
-    docker-php-ext-enable redis
+    pecl install imagick && \
+    docker-php-ext-enable redis imagick
 RUN a2enmod rewrite
 
 COPY --chown=33:33 . /var/www/html
