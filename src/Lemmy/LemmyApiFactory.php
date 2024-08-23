@@ -27,6 +27,7 @@ final readonly class LemmyApiFactory
             version: LemmyApiVersion::Version3,
             httpClient: $this->httpClient,
             requestFactory: $this->requestFactory,
+            strictDeserialization: false,
         );
 
         if ($username && $password) {
