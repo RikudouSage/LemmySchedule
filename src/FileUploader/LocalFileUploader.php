@@ -2,6 +2,7 @@
 
 namespace App\FileUploader;
 
+use App\Service\ImageMetadataRemover;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Uid\Uuid;
@@ -10,13 +11,16 @@ final readonly class LocalFileUploader implements FileUploader
 {
     public function __construct(
         private string $uploadPath,
+        private ImageMetadataRemover $metadataRemover,
     ) {
     }
 
     public function upload(File $file): Uuid
     {
         $uuid = Uuid::v4();
+        $this->metadataRemover->stripMetadata($file);
         $content = $file->getContent();
+
         $targetPath = $this->getTargetPath($uuid);
         if (!is_dir(dirname($targetPath)) && !mkdir(dirname($targetPath), recursive: true)) {
             throw new RuntimeException('Failed to create a target directory: ' . dirname($targetPath));

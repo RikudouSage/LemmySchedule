@@ -54,6 +54,7 @@ provider:
         UNREAD_POSTS_BOT_INSTANCE: ${env:UNREAD_POSTS_BOT_INSTANCE, ''}
         ASSETS_URL: https://assets.${self:custom.Domain}
         NEW_VERSION_CHECK: ${env:NEW_VERSION_CHECK, '1'}
+        CATBOX_USER_HASH: ${env:CATBOX_USER_HASH, ''}
 
 plugins:
   - ./vendor/bref/bref

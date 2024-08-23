@@ -2,6 +2,7 @@
 
 namespace App\FileUploader;
 
+use App\Service\ImageMetadataRemover;
 use App\Service\TemporaryFileCleaner;
 use AsyncAws\S3\S3Client;
 use RuntimeException;
@@ -14,11 +15,13 @@ final readonly class S3FileUploader implements FileUploader
         private S3Client $s3client,
         private string $bucket,
         private TemporaryFileCleaner $fileCleaner,
+        private ImageMetadataRemover $metadataRemover,
     ) {
     }
 
     public function upload(File $file): Uuid
     {
+        $this->metadataRemover->stripMetadata($file);
         $uuid = Uuid::v4();
         $this->s3client->putObject([
             'Bucket' => $this->bucket,

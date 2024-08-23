@@ -19,6 +19,7 @@ jobs:
       FILE_UPLOADER_CLASS: App\FileUploader\S3FileUploader
       IMGUR_ACCESS_TOKEN: ${{ secrets.IMGUR_ACCESS_TOKEN }}
       UNREAD_POSTS_BOT_JWT: ${{ secrets.UNREAD_POSTS_BOT_JWT }}
+      CATBOX_USER_HASH: ${{ secrets.CATBOX_USER_HASH }}
       UNREAD_POSTS_BOT_INSTANCE: lemmings.world
       NEW_VERSION_CHECK: 0
     steps:

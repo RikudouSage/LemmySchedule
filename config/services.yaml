@@ -16,8 +16,13 @@ parameters:
 
     app.file_provider.imgur.access_token: '%env(IMGUR_ACCESS_TOKEN)%'
 
+    app.file_provider.catbox.user_hash: '%env(CATBOX_USER_HASH)%'
+    app.file_provider.catbox.allow_anonymous: '%env(bool:CATBOX_ALLOW_ANONYMOUS)%'
+
     app.unread_posts.bot_jwt: '%env(UNREAD_POSTS_BOT_JWT)%'
     app.unread_posts.bot_instance: '%env(UNREAD_POSTS_BOT_INSTANCE)%'
+
+    app.debug.jwt: '%env(DEBUG_JWT)%'
 
 services:
     # default configuration for services in *this* file
@@ -56,6 +61,11 @@ services:
         arguments:
             $accessToken: '%app.file_provider.imgur.access_token%'
 
+    App\FileProvider\CatboxMoeFileProvider:
+        arguments:
+            $allowAnonymous: '%app.file_provider.catbox.allow_anonymous%'
+            $userHash: '%app.file_provider.catbox.user_hash%'
+
     App\JobHandler\ReportUnreadPostsJobHandler:
         arguments:
             $botInstance: '%app.unread_posts.bot_instance%'
@@ -68,3 +78,7 @@ services:
     App\Service\FeatureFlags:
         arguments:
             - community_groups: '%env(bool:FLAG_COMMUNITY_GROUPS)%'
+
+    App\Command\DebugUploadImageCommand:
+        arguments:
+            $debugJwt: '%app.debug.jwt%'

@@ -7,6 +7,7 @@
         "php": "^8.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "ext-imagick": "*",
         "ext-intl": "*",
         "async-aws/s3": "^2.0",
         "async-aws/scheduler": "^1.1",
