@@ -14,10 +14,10 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN apt-get update && \
     apt-get -y install libxml2-dev libonig-dev libmagickwand-dev supervisor unzip wget && \
     rm -rf /var/lib/apt/lists/*
-RUN docker-php-ext-install intl opcache pcntl && \
+RUN mkdir -p /usr/src/php/ext/imagick && curl -fsSL https://github.com/Imagick/imagick/archive/944b67fce68bcb5835999a149f917670555b6fcb.tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1 && \
+    docker-php-ext-install intl opcache pcntl imagick && \
     pecl install redis && \
-    pecl install imagick && \
-    docker-php-ext-enable redis imagick
+    docker-php-ext-enable redis
 RUN a2enmod rewrite
 
 COPY --chown=33:33 . /var/www/html
