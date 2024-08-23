@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "15bd99a9aa55ffdeff85a36001d58ad0",
+    "content-hash": "1c2a6ce33b0c6639d652bcb900412df6",
     "packages": [
         {
             "name": "async-aws/core",
@@ -506,6 +506,66 @@
                 }
             ],
             "time": "2024-08-16T17:30:08+00:00"
+        },
+        {
+            "name": "bref/extra-php-extensions",
+            "version": "1.4.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/brefphp/extra-php-extensions.git",
+                "reference": "912c8ed8db77ea12805dd225ab8e261df41fcae4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/brefphp/extra-php-extensions/zipball/912c8ed8db77ea12805dd225ab8e261df41fcae4",
+                "reference": "912c8ed8db77ea12805dd225ab8e261df41fcae4",
+                "shasum": ""
+            },
+            "conflict": {
+                "bref/bref": "<2.1.15"
+            },
+            "require-dev": {
+                "async-aws/core": "^1.7",
+                "async-aws/lambda": "^1.1",
+                "bref/logger": "^1.0",
+                "mnapoli/silly": "^1.7",
+                "mnapoli/silly-php-di": "^1.2",
+                "php-di/php-di": "^6.3",
+                "symfony/finder": "^5.2",
+                "symfony/http-client": "5.3.8",
+                "symfony/process": "^5.0"
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Tobias Nyholm",
+                    "email": "tobias.nyholm@gmail.com"
+                }
+            ],
+            "description": "Extra PHP extensions for your lambda application.",
+            "support": {
+                "issues": "https://github.com/brefphp/extra-php-extensions/issues",
+                "source": "https://github.com/brefphp/extra-php-extensions/tree/1.4.6"
+            },
+            "funding": [
+                {
+                    "url": "https://bref.sh/#enterprise",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/Nyholm",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/mnapoli",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-08-09T16:30:33+00:00"
         },
         {
             "name": "bref/symfony-bridge",
@@ -8677,7 +8737,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-imagick": "*",

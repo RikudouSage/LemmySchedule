@@ -58,6 +58,7 @@ provider:
 
 plugins:
   - ./vendor/bref/bref
+  - ./vendor/bref/extra-php-extensions
 
 custom:
     Domain: ${env:DOMAIN_NAME}
@@ -74,7 +75,8 @@ functions:
         environment:
             CONSOLE_FUNCTION: !GetAtt ConsoleLambdaFunction.Arn
         layers:
-            - ${bref:layer.php-82-fpm}
+            - ${bref:layer.php-83-fpm}
+            - ${bref-extra:imagick-php-83}
         events:
             - httpApi: '*'
     # This function let us run console commands in Lambda
@@ -85,7 +87,8 @@ functions:
         environment:
             CONSOLE_FUNCTION: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-console
         layers:
-            - ${bref:layer.php-82} # PHP
+            - ${bref:layer.php-83} # PHP
+            - ${bref-extra:imagick-php-83}
             - ${bref:layer.console} # The "console" layer
 
 package:

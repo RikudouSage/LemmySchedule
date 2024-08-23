@@ -4,7 +4,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-imagick": "*",
@@ -12,6 +12,7 @@
         "async-aws/s3": "^2.0",
         "async-aws/scheduler": "^1.1",
         "bref/bref": "^2.1",
+        "bref/extra-php-extensions": "^1.4",
         "bref/symfony-bridge": "^0.2.2",
         "bref/symfony-messenger": "^0.5.4",
         "dragonmantank/cron-expression": "^3.3",
