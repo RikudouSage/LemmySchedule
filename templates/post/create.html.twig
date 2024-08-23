@@ -10,6 +10,7 @@
                       action="{{ path('app.post.create.do') }}" {{ stimulus_controller('create-post', {
                         parseTitleUrl: path('app.post.ajax.title_expression'),
                         newCommentBoxUrl: path('app.post.ajax.new_comment_box'),
+                        pageTitleUrl: path('app.post.ajax.page_title'),
                       }) }}>
                     <div class="form-group">
                         <label for="inputTitle">{{ "Title" | trans }}</label>
@@ -53,8 +54,9 @@
                     <div class="form-group">
                         <label for="inputUrl">{{ "URL" | trans }}</label>
                         <input id="inputUrl" class="form-control" type="url" name="url" value="{{ url|default('') }}"
+                               {{ stimulus_action('create-post', 'urlChanged', 'input') }}
                                {{ stimulus_target('create-post', 'urlInput') }}
-                                {{ stimulus_action('create-post', 'toggleDuplicityCheck') }} />
+                               {{ stimulus_action('create-post', 'toggleDuplicityCheck') }} />
                     </div>
                     <div class="form-group" hidden {{ stimulus_target('create-post', 'checkForDuplicatesWrapper') }}>
                         <div class="custom-control custom-switch">

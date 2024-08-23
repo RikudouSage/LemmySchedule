@@ -82,3 +82,7 @@ services:
     App\Command\DebugUploadImageCommand:
         arguments:
             $debugJwt: '%app.debug.jwt%'
+
+    Symfony\Component\BrowserKit\HttpBrowser:
+        arguments:
+            $client: '@http_client'

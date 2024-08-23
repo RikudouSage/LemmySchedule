@@ -10,11 +10,12 @@ interface TitleExpressionResponse {
 }
 
 export default class extends Controller {
-    static debounces: string[] = ['checkTitleForExpressions'];
+    static debounces: string[] = ['checkTitleForExpressions', 'urlChanged'];
 
     static values = {
         parseTitleUrl: String,
         newCommentBoxUrl: String,
+        pageTitleUrl: String,
     };
 
     static targets = [
@@ -71,6 +72,7 @@ export default class extends Controller {
 
     private parseTitleUrlValue: string;
     private newCommentBoxUrlValue: string;
+    private pageTitleUrlValue: string;
 
     public async connect(): Promise<void> {
         useDebounce(this, {wait: 500});
@@ -171,5 +173,26 @@ export default class extends Controller {
         const target = event.currentTarget as HTMLElement;
         target.parentElement.remove();
         console.log(event);
+    }
+
+    public async urlChanged(): Promise<void> {
+        if (this.titleInputTarget.value) {
+            return;
+        }
+        try {
+            const url = new URL(this.urlInputTarget.value);
+            const response = await fetch(this.pageTitleUrlValue, {
+                method: 'POST',
+                body: JSON.stringify({
+                    url: url,
+                })
+            })
+            const json = await response.json() as {title: string | null};
+            if (json.title) {
+                this.titleInputTarget.value = json.title;
+            }
+        } catch (e) {
+            // ignore
+        }
     }
 }
