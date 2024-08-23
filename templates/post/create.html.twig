@@ -54,7 +54,7 @@
                     <div class="form-group">
                         <label for="inputUrl">{{ "URL" | trans }}</label>
                         <input id="inputUrl" class="form-control" type="url" name="url" value="{{ url|default('') }}"
-                               {{ stimulus_action('create-post', 'urlChanged', 'change') }}
+                               {{ stimulus_action('create-post', 'urlChanged', 'input') }}
                                {{ stimulus_target('create-post', 'urlInput') }}
                                {{ stimulus_action('create-post', 'toggleDuplicityCheck') }} />
                     </div>

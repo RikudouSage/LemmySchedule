@@ -10,7 +10,7 @@ interface TitleExpressionResponse {
 }
 
 export default class extends Controller {
-    static debounces: string[] = ['checkTitleForExpressions'];
+    static debounces: string[] = ['checkTitleForExpressions', 'urlChanged'];
 
     static values = {
         parseTitleUrl: String,
