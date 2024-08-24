@@ -109,6 +109,14 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="{{ path('app.counters.list') }}" class="nav-link">
+                                <i class="nav-icon fas fa-stopwatch-20"></i>
+                                <p>
+                                    {{ "Counters" | trans }}
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="{{ path('auth.logout') }}" class="nav-link">
                                 <i class="nav-icon fas fa-sign-out-alt"></i>
                                 <p>

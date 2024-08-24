@@ -3,11 +3,13 @@
 namespace App\JobHandler;
 
 use App\Authentication\User;
+use App\Dto\CounterConfiguration;
 use App\Enum\PinType;
 use App\FileProvider\FileProvider;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJobV2;
 use App\Lemmy\LemmyApiFactory;
+use App\Service\CountersRepository;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
 use App\Service\ScheduleExpressionParser;
@@ -30,13 +32,14 @@ final readonly class CreatePostJobHandler
      * @param iterable<FileProvider> $fileProviders
      */
     public function __construct(
-        private LemmyApiFactory $apiFactory,
+        private LemmyApiFactory          $apiFactory,
         private ScheduleExpressionParser $scheduleExpressionParser,
-        private JobManager $jobManager,
-        private CurrentUserService $currentUserService,
+        private JobManager               $jobManager,
+        private CurrentUserService       $currentUserService,
         #[TaggedIterator('app.file_provider')]
-        private iterable $fileProviders,
-        private TitleExpressionReplacer $expressionReplacer,
+        private iterable                 $fileProviders,
+        private TitleExpressionReplacer  $expressionReplacer,
+        private CountersRepository $countersRepository,
     ) {
     }
 
@@ -45,6 +48,11 @@ final readonly class CreatePostJobHandler
         $api = $this->apiFactory->get($job->instance, jwt: $job->jwt);
         if ($this->hasDuplicates($job, $api)) {
             return;
+        }
+
+        $me = $api->site()->getSite()->myUser?->localUserView->person;
+        if ($me !== null) {
+            $this->currentUserService->setCurrentUser(new User($me->name, $job->instance, $job->jwt));
         }
 
         $default = null;
@@ -79,6 +87,7 @@ final readonly class CreatePostJobHandler
             nsfw: $job->nsfw,
             url: $job->url ?? $imageUrl,
         );
+        $this->handleCounters($job);
         if ($job->pinToCommunity) {
             try {
                 $api->post()->pin($post->post, PostFeatureType::Community);
@@ -101,10 +110,6 @@ final readonly class CreatePostJobHandler
         if ($expression = $job->scheduleExpression) {
             sleep(1);
             assert($job->scheduleTimezone !== null);
-            $me = $api->site()->getSite()->myUser?->localUserView->person;
-            if ($me !== null) {
-                $this->currentUserService->setCurrentUser(new User($me->name, $job->instance, $job->jwt));
-            }
             $nextDate = $this->scheduleExpressionParser->getNextRunDate(
                 expression: $expression,
                 timeZone: new DateTimeZone($job->scheduleTimezone),
@@ -161,5 +166,26 @@ final readonly class CreatePostJobHandler
         } while (count($posts));
 
         return false;
+    }
+
+    private function handleCounters(CreatePostJob $job): void
+    {
+        $regex = '@#\[Counter\([\'"]([^\'"]+)[\'"]\)]#@';
+        $result = $this->expressionReplacer->parse($job->title);
+        $counters = [];
+        foreach ($result->validExpressions as $expression) {
+            if (!preg_match($regex, $expression, $matches)) {
+                continue;
+            }
+
+            $counters[] = $matches[1];
+        }
+
+        foreach ($counters as $counterName) {
+            $counter = $this->countersRepository->findByName($counterName);
+            $counter ??= new CounterConfiguration(name: $counterName, value: 0, incrementBy: 1);
+            $counter = new CounterConfiguration(name: $counterName, value: $counter->value + $counter->incrementBy, incrementBy: $counter->incrementBy);
+            $this->countersRepository->store($counter);
+        }
     }
 }
