@@ -1,0 +1,54 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{% apply spaceless %}
+    {% if isNew %}
+        {{ "Add a counter" | trans }}
+    {% else %}
+        {{ "Modify counter {name}" | trans({'{name}': counter.name}) }}
+    {% endif %}
+{% endapply %}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    <table class="table table-bordered">
+                        <tr>
+                            <td><label for="inputName">{{ "Counter name" | trans }}</label></td>
+                            <td>
+                                {% if isNew %}
+                                    <input required class="form-control" id="inputName" type="text" name="name"/>
+                                {% else %}
+                                    <input type="hidden" name="name" value="{{ counter.name }}"/>
+                                    <input class="form-control" id="inputName" type="text" disabled value="{{ counter.name }}"/>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="inputValue">{{ isNew ? "Default value" | trans : "Value" | trans }}</label>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control" name="value" id="inputValue"
+                                       value="{{ isNew ? 1 : counter.value }}" required/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="inputIncrementBy">{{ "Increment by" | trans }}</label></td>
+                            <td>
+                                <input type="number" class="form-control" name="incrementBy" id="inputIncrementBy"
+                                       value="{{ isNew ? 1 : counter.incrementBy }}" required/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <button type="submit" class="btn btn-primary">{{ isNew ? "Add" | trans : "Update" | trans }}</button>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

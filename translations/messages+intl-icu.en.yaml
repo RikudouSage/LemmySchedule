@@ -18,3 +18,4 @@ schedule.description.on_weekday: on
 schedule.description.at_time: at
 schedule.description.on_day_of_month: on day
 schedule.description.on_last_day: on last day of month
+app.counters.intro: 'Counters are custom variables that can be injected in the title and are automatically incremented every time you use them. You can inject them using #[Counter(''counter_name'')]#'

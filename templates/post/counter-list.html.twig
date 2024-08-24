@@ -1,0 +1,48 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "Counters" | trans }}{% endblock %}
+
+{% block body %}
+<div class="col-md-12">
+    <div class="card">
+        <div class="card-body">
+            <p>
+                {{ "app.counters.intro" | trans }}
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ "List of counters" | trans }}</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <tr>
+                    <th>{{ "Counter name" | trans }}</th>
+                    <th>{{ "Current value" | trans }}</th>
+                    <th>{{ "Increment by" | trans }}</th>
+                    <th>{{ "Actions" | trans }}</th>
+                </tr>
+                <tr>
+                    <td colspan="4">
+                        <a href="{{ path('app.counters.add') }}" class="btn btn-primary">{{ "Create a counter" | trans }}</a>
+                    </td>
+                </tr>
+                {% for counter in counters %}
+                    <tr>
+                        <td><a href="{{ path('app.counters.edit', {name: counter.name}) }}">{{ counter.name }}</a></td>
+                        <td {{ stimulus_controller('format-number') }}>{{ counter.value }}</td>
+                        <td {{ stimulus_controller('format-number') }}>{{ counter.incrementBy }}</td>
+                        <td><a class="btn btn-danger" href="{{ path('app.counters.delete', {name: counter.name}) }}">{{ "Delete" | trans }}</a></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4">{{ "It appears you don't have any counters yet." | trans }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
