@@ -104,6 +104,7 @@ in `.env.local` file.
 | `FLAG_COMMUNITY_GROUPS`     | whether community groups, an experimental feature, should be enabled                                                                                                                         | 0                                                    | no           |
 | `SOURCE_URL`                | the URL of the source code, used for new version checks and for a footer link - if you plan on maintaining a fork, you can change it to your fork URL                                        | https://github.com/RikudouSage/LemmySchedule         | **yes**      |
 | `NEW_VERSION_CHECK`         | set to 1 or 0 to enable or disable checks for a new version                                                                                                                                  | 1                                                    | **yes**      |
+| `DEFAULT_COMMUNITIES`       | a comma separated list of communities that will be preselected when going to the schedule page                                                                                               |                                                      | no           |
 
 #### Job transports
 

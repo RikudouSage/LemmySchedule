@@ -2,7 +2,7 @@
 pkgs.mkShell {
     nativeBuildInputs = with pkgs.buildPackages;
     let
-        php82 = pkgs.php82.buildEnv {
+        php83 = pkgs.php83.buildEnv {
             extensions = ({ enabled, all }: enabled ++ (with all; [
                     xdebug
                     redis
@@ -17,9 +17,9 @@ pkgs.mkShell {
      [
         nodejs_18
         nodePackages.serverless
-        php82
-        php82.packages.composer
-        php82Extensions.redis
+        php83
+        php83.packages.composer
+        php83Extensions.redis
         redis
         symfony-cli
         yarn

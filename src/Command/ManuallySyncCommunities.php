@@ -7,9 +7,11 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\TransportNamesStamp;
 
 #[AsCommand('app:sync:manual')]
 final class ManuallySyncCommunities extends Command
@@ -24,6 +26,8 @@ final class ManuallySyncCommunities extends Command
     {
         $this
             ->addArgument('instance', InputArgument::REQUIRED)
+            ->addOption('sync', mode: InputOption::VALUE_NONE)
+            ->addOption('jwt', mode: InputOption::VALUE_REQUIRED)
         ;
     }
 
@@ -31,10 +35,14 @@ final class ManuallySyncCommunities extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
+        $stamps = $input->getOption('sync') ? [new TransportNamesStamp('sync')] : [];
+
+        $jwt = $input->getOption('jwt') ?? $io->askHidden('JWT');
+
         $this->messageBus->dispatch(new FetchCommunitiesJob(
             instance: $input->getArgument('instance'),
-            jwt: $io->askHidden('JWT')
-        ));
+            jwt: $jwt,
+        ), $stamps);
 
         return self::SUCCESS;
     }
