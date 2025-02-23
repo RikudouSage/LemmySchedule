@@ -293,6 +293,7 @@ final class PostController extends AbstractController
             'timezoneName' => $request->request->get('timezoneName'),
             'checkForDuplicates' => $request->request->getBoolean('checkForDuplicates'),
             'comments' => $request->request->all('comments'),
+            'thumbnailUrl' => $request->request->get('thumbnailUrl'),
         ];
         $data['scheduleDateTimeObject'] = $data['scheduleDateTime'] ? new DateTimeImmutable($data['scheduleDateTime']) : null;
         if (isset($data['scheduler']['scheduleType'])) {
@@ -452,6 +453,7 @@ final class PostController extends AbstractController
                     timezoneName: $data['timezoneName'],
                     checkForUrlDuplicates: $data['checkForDuplicates'],
                     comments: $data['comments'],
+                    thumbnailUrl: $data['thumbnailUrl'],
                 ),
                 $dateTime,
             );

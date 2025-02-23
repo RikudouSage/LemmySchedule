@@ -58,6 +58,12 @@
                                {{ stimulus_target('create-post', 'urlInput') }}
                                {{ stimulus_action('create-post', 'toggleDuplicityCheck') }} />
                     </div>
+                    {% if enum('App\\Enum\\Feature').ThumbnailUrl is supported %}
+                        <div class="form-group">
+                            <label for="inputThumbnailUrl">{{ "Thumbnail URL" | trans }}</label>
+                            <input id="inputThumbnailUrl" class="form-control" name="thumbnailUrl" type="url" value="{{ thumbnailUrl|default('') }}" />
+                        </div>
+                    {% endif %}
                     <div class="form-group" hidden {{ stimulus_target('create-post', 'checkForDuplicatesWrapper') }}>
                         <div class="custom-control custom-switch">
                             <input class="custom-control-input" type="checkbox" id="inputCheckForDuplicates"
