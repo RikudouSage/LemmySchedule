@@ -7,6 +7,7 @@ parameters:
     app.default_instance: '%env(DEFAULT_INSTANCE)%'
     app.single_instance: '%env(bool:SINGLE_INSTANCE_MODE)%'
     app.default_post_language: '%env(int:DEFAULT_POST_LANGUAGE)%'
+    app.default_communities: '%env(csv:DEFAULT_COMMUNITIES)%'
     app.source_url: '%env(SOURCE_URL)%'
     app.version_check.enabled: '%env(bool:NEW_VERSION_CHECK)%'
 

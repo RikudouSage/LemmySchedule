@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Authentication\User;
+use App\Dto\CommunityGroup;
 use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
@@ -229,6 +230,8 @@ final class PostController extends AbstractController
         #[Autowire('%app.default_post_language%')]
         int $defaultLanguage,
         CommunityGroupManager $groupManager,
+        #[Autowire('%app.default_communities%')]
+        array $defaultCommunities,
     ): Response {
         $fileProviders = [...$fileProviders];
         $default = (array_values(array_filter($fileProviders, static fn (FileProvider $fileProvider) => $fileProvider->isDefault()))[0] ?? null)?->getId();
@@ -236,9 +239,14 @@ final class PostController extends AbstractController
             throw new LogicException('No default file provider specified');
         }
 
+        $defaultCommunities = array_map(
+            fn (string $community) => str_starts_with($community, '!') ? $community : '!' . $community,
+            $defaultCommunities,
+        );
+
         return $this->render('post/create.html.twig', [
             'communities' => $this->getCommunities(),
-            'selectedCommunities' => [],
+            'selectedCommunities' => $defaultCommunities,
             'languages' => Language::cases(),
             'selectedLanguage' => Language::tryFrom($defaultLanguage) ?? Language::Undetermined,
             'fileProviders' => [...$fileProviders],
