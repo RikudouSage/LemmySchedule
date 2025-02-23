@@ -13,6 +13,7 @@ use App\Service\CountersRepository;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
 use App\Service\ScheduleExpressionParser;
+use App\Service\SupportedFeaturesManager;
 use App\Service\TitleExpressionReplacer;
 use DateInterval;
 use DateTimeImmutable;
@@ -40,6 +41,7 @@ final readonly class CreatePostJobHandler
         private iterable                 $fileProviders,
         private TitleExpressionReplacer  $expressionReplacer,
         private CountersRepository $countersRepository,
+        private SupportedFeaturesManager $featuresManager,
     ) {
     }
 
@@ -86,6 +88,7 @@ final readonly class CreatePostJobHandler
             language: $job->language,
             nsfw: $job->nsfw,
             url: $job->url ?? $imageUrl,
+            customThumbnail: $job->thumbnailUrl,
         );
         $this->handleCounters($job);
         if ($job->pinToCommunity) {
