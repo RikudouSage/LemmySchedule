@@ -6,6 +6,7 @@ pkgs.mkShell {
             extensions = ({ enabled, all }: enabled ++ (with all; [
                     xdebug
                     redis
+                    imagick
                 ]
             ));
             extraConfig = ''
