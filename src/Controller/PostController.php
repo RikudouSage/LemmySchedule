@@ -453,7 +453,7 @@ final class PostController extends AbstractController
                     timezoneName: $data['timezoneName'],
                     checkForUrlDuplicates: $data['checkForDuplicates'],
                     comments: $data['comments'],
-                    thumbnailUrl: $data['thumbnailUrl'],
+                    thumbnailUrl: $data['thumbnailUrl'] ?: null,
                 ),
                 $dateTime,
             );
