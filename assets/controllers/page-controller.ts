@@ -27,7 +27,9 @@ export default class extends Controller {
             await this.toggleSideMenu(null);
         }
 
-        await this.checkForNewVersion();
+        if (this.isLoggedInValue) {
+            await this.checkForNewVersion();
+        }
     }
 
     public async toggleSideMenu(event: Event | null): Promise<void> {
