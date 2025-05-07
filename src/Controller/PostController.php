@@ -56,6 +56,16 @@ final class PostController extends AbstractController
     ) {
     }
 
+    #[Route('/help/expressions', name: 'app.post.expressions_help', methods: [Request::METHOD_GET])]
+    public function expressionsHelp(
+        TitleExpressionReplacer $expressionReplacer,
+    ): Response
+    {
+        return $this->render('post/expressions_help.html.twig', [
+            'expression' => $expressionReplacer,
+        ]);
+    }
+
     #[Route('/list', name: 'app.post.list', methods: [Request::METHOD_GET])]
     public function listPosts(JobManager $jobManager, LemmyApiFactory $apiFactory, bool $unreadPostsEnabled): Response
     {

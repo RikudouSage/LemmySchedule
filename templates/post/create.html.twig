@@ -13,7 +13,12 @@
                         pageTitleUrl: path('app.post.ajax.page_title'),
                       }) }}>
                     <div class="form-group">
-                        <label for="inputTitle">{{ "Title" | trans }}</label>
+                        <label for="inputTitle">
+                            {{ "Title" | trans }}
+                            <a href="{{ path('app.post.expressions_help') }}" target="_blank" {{ stimulus_controller('tippy', {message: "app.create.title.help" | trans}) }}>
+                                <i class="fas fa-question-circle color-black"></i>
+                            </a>
+                        </label>
                         <input id="inputTitle" class="form-control" type="text" name="title"
                                {{ stimulus_target('create-post', 'titleInput') }}
                                {{ stimulus_action('create-post', 'checkTitleForExpressions') }}

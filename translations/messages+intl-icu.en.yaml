@@ -19,3 +19,21 @@ schedule.description.at_time: at
 schedule.description.on_day_of_month: on day
 schedule.description.on_last_day: on last day of month
 app.counters.intro: 'Counters are custom variables that can be injected in the title and are automatically incremented every time you use them. You can inject them using #[Counter(''counter_name'')]#'
+app.create.title.help: Click this icon to open a page with help on dynamic expressions you can insert into the title. The link opens in a new tab.
+app.post.expressions.help_title: Title expressions
+app.post.expressions.content: |
+  Lemmy Schedule allows you to use special expressions in the post title, which will be automatically replaced with their corresponding values when the post is published.
+  You can find a list of all supported expressions below.
+app.post.expressions.table.expression: Expression
+app.post.expressions.table.description: Description
+app.post.expressions.date_inject.description: |
+  Makes it possible to inject the date **at the time of the post**. Very useful for recurring posts. The `date-string` parameter must be filled with a string from the PHP's [DateTime::format()](https://www.php.net/manual/en/datetime.format.php#refsect1-datetime.format-parameters) method.
+  Some examples:
+  
+  - `{example1}`: *{result1}*
+  - `{example2}`: *{result2}*
+  - `{example3}`: *{result3}*
+app.post.expressions.counter.description: |
+  Increments a named counter every time you make a post which includes it. See [Counters]({countersUrl}) to list all your counters or create new ones.
+  Useful for recurring posts which are not related, for example `{example}` could be used for a weekly post that increments indefinitely and is not dependent
+  on the date.

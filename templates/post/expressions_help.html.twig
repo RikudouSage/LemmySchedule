@@ -1,0 +1,49 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ "app.post.expressions.help_title" | trans }}{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <p>{{ "app.post.expressions.content" | trans }}</p>
+                <table class="table table-bordered table-striped">
+                    <tr>
+                        <th>{{ "app.post.expressions.table.expression" | trans }}</th>
+                        <th>{{ "app.post.expressions.table.description" | trans }}</th>
+                    </tr>
+                    <tr>
+                        <td class="text-nowrap">
+                            <code>#[InjectDate('date-string')]#</code>
+                        </td>
+                        <td>
+                            {% set example1 = "Today is #[InjectDate('l, M jS')]#" %}
+                            {% set example2 = "Weekly chat no. #[InjectDate('W')]#, what are you up to?" %}
+                            {% set example3 = "#[InjectDate('d.m.Y')]#" %}
+
+                            {{ "app.post.expressions.date_inject.description" | trans({
+                                example1: example1,
+                                example2: example2,
+                                example3: example3,
+                                result1: expression.replace(example1),
+                                result2: expression.replace(example2),
+                                result3: expression.replace(example3),
+                            }) | markdown_to_html }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-nowrap">
+                            <code>#[Counter('counter_name')]#</code>
+                        </td>
+                        <td>
+                            {{ "app.post.expressions.counter.description" | trans({
+                                countersUrl: path('app.counters.list'),
+                                example: "#[Counter('weekly_post')]#",
+                            }) | markdown_to_html }}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

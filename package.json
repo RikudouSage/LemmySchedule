@@ -29,6 +29,7 @@
         "build": "encore production --progress"
     },
     "dependencies": {
+        "tippy.js": "^6.3.7",
         "tom-select": "^2.2.2"
     }
 }
