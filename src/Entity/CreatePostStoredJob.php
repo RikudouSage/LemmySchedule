@@ -133,7 +133,7 @@ class CreatePostStoredJob
         return $this;
     }
 
-    public function isPinToCommunity(): ?bool
+    public function shouldPinToCommunity(): ?bool
     {
         return $this->pinToCommunity;
     }
@@ -145,7 +145,7 @@ class CreatePostStoredJob
         return $this;
     }
 
-    public function isPinToInstance(): ?bool
+    public function shouldPinToInstance(): ?bool
     {
         return $this->pinToInstance;
     }
@@ -181,7 +181,7 @@ class CreatePostStoredJob
         return $this;
     }
 
-    public function isCheckForUrlDuplicates(): ?bool
+    public function shouldCheckForUrlDuplicates(): ?bool
     {
         return $this->checkForUrlDuplicates;
     }

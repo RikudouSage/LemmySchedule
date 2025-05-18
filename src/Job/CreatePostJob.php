@@ -3,10 +3,12 @@
 namespace App\Job;
 
 use DateTimeInterface;
+use JetBrains\PhpStorm\Deprecated;
 use Rikudou\LemmyApi\Enum\Language;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Component\Uid\Uuid;
 
+#[Deprecated]
 final readonly class CreatePostJob
 {
     public function __construct(

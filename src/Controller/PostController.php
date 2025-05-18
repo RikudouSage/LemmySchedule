@@ -3,14 +3,15 @@
 namespace App\Controller;
 
 use App\Authentication\User;
+use App\Entity\CreatePostStoredJob;
 use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
 use App\Enum\Weekday;
 use App\FileProvider\FileProvider;
 use App\FileUploader\FileUploader;
-use App\Job\CreatePostJob;
-use App\Job\DeleteFileJob;
+use App\Job\CreatePostJobV2;
+use App\Job\DeleteFileJobV2;
 use App\Job\PinUnpinPostJobV2;
 use App\Job\ReportUnreadPostsJob;
 use App\Lemmy\LemmyApiFactory;
@@ -20,6 +21,7 @@ use App\Repository\UnreadPostReportStoredJobRepository;
 use App\Service\CommunityGroupManager;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
+use App\Service\JobScheduler;
 use App\Service\ScheduleExpressionParser;
 use App\Service\TitleExpressionReplacer;
 use DateInterval;
@@ -161,7 +163,6 @@ final class PostController extends AbstractController
         Request $request,
         LemmyApiFactory $apiFactory,
         TranslatorInterface $translator,
-        JobManager $jobManager,
         CurrentUserService $currentUserService,
         FileUploader $fileUploader,
         ScheduleExpressionParser $scheduleExpressionParser,
@@ -170,6 +171,8 @@ final class PostController extends AbstractController
         CommunityGroupManager $groupManager,
         #[Autowire('%app.default_post_language%')]
         int $defaultLanguage,
+        EntityManagerInterface $entityManager,
+        JobScheduler $jobScheduler,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -320,9 +323,9 @@ final class PostController extends AbstractController
             return $errorResponse();
         }
 
-        $imageId = null;
+        $storedImage = null;
         if ($image instanceof UploadedFile) {
-            $imageId = $fileUploader->upload($image);
+            $storedImage = $fileUploader->upload($image);
         }
 
         if ($data['recurring']) {
@@ -334,33 +337,42 @@ final class PostController extends AbstractController
             $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
         }
         foreach ($communities as $community) {
-            $jobManager->createJob(
-                new CreatePostJob(
-                    jwt: $user->getJwt(),
-                    instance: $user->getInstance(),
-                    community: $community,
-                    title: $data['title'],
-                    url: $data['url'] ?: null,
-                    text: $data['text'] ?: null,
-                    language: $data['selectedLanguage'],
-                    nsfw: $data['nsfw'],
-                    pinToCommunity: $data['pinToCommunity'],
-                    pinToInstance: $data['pinToInstance'],
-                    imageId: $imageId,
-                    scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
-                    scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
-                    unpinAt: $data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null,
-                    fileProvider: $data['defaultFileProvider'],
-                    timezoneName: $data['timezoneName'],
-                    checkForUrlDuplicates: $data['checkForDuplicates'],
-                    comments: $data['comments'],
-                    thumbnailUrl: $data['thumbnailUrl'] ?: null,
-                ),
+            $entity = (new CreatePostStoredJob())
+                ->setJwt($user->getJwt())
+                ->setInstance($user->getInstance())
+                ->setCommunityId($community->id)
+                ->setTitle($data['title'])
+                ->setUrl($data['url'] ?: null)
+                ->setText($data['text'] ?: null)
+                ->setLanguage($data['selectedLanguage'])
+                ->setNsfw($data['nsfw'])
+                ->setPinToCommunity($data['pinToCommunity'])
+                ->setPinToInstance($data['pinToInstance'])
+                ->setImage($storedImage)
+                ->setScheduleExpression($data['recurring'] ? $data['scheduler']['expression'] : null)
+                ->setScheduleTimezone($data['recurring'] ? $data['scheduler']['timezone'] : null)
+                ->setUnpinAt($data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null)
+                ->setFileProviderId($data['defaultFileProvider'])
+                ->setTimezoneName($data['timezoneName'])
+                ->setCheckForUrlDuplicates($data['checkForDuplicates'])
+                ->setComments($data['comments'])
+                ->setThumbnailUrl($data['thumbnailUrl'] ?: null)
+                ->setUserId($this->getUser()->getUserIdentifier())
+                ->setScheduledAt($dateTime)
+            ;
+            $entityManager->persist($entity);
+            $entityManager->flush();
+
+            $jobScheduler->schedule(
+                new CreatePostJobV2($entity->getId()),
                 $dateTime,
             );
         }
-        if ($imageId !== null) {
-            $jobManager->createJob(new DeleteFileJob($imageId), $dateTime->add(new DateInterval('PT5M')));
+        if ($storedImage !== null) {
+            $jobScheduler->schedule(
+                new DeleteFileJobV2($storedImage->getId()),
+                $dateTime->add(new DateInterval('PT5M')),
+            );
         }
 
         $this->addFlash('success', $translator->trans('Posts have been successfully scheduled.'));

@@ -25,7 +25,7 @@ final readonly class CatboxMoeFileProvider implements FileProvider
     ) {
     }
 
-    public function getLink(Uuid $fileId, User $user): ?string
+    public function getLink(Uuid|int $fileId, User $user): ?string
     {
         $image = $this->uploader->get($fileId);
         $mimeType = $this->mimeTypeGuesser->guessMimeType($image->getRealPath());

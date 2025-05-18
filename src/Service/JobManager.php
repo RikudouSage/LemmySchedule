@@ -8,12 +8,14 @@ use App\JobStamp\RegistrableStamp;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
+use JetBrains\PhpStorm\Deprecated;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Uid\Uuid;
 
+#[Deprecated]
 final readonly class JobManager
 {
     public function __construct(

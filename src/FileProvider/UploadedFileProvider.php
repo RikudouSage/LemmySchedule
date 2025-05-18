@@ -17,7 +17,7 @@ final readonly class UploadedFileProvider implements FileProvider
     ) {
     }
 
-    public function getLink(Uuid $fileId, User $user): ?string
+    public function getLink(Uuid|int $fileId, User $user): ?string
     {
         $api = $this->apiFactory->getForUser($user);
 

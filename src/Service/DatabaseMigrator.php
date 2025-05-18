@@ -57,13 +57,21 @@ final readonly class DatabaseMigrator
         $this->cache->save($cacheItem);
     }
 
-    private function migrateJob(string $userId, Envelope $job, array &$jobsToDelete): void
+    public function migrateJob(string $userId, object $job, array &$jobsToDelete = []): ?object
     {
-        $object = $job->getMessage();
-        $metadata = $job->last(MetadataStamp::class);
-        assert($metadata !== null);
-        $expiresAt = $metadata->metadata['expiresAt'];
-        assert($expiresAt instanceof DateTimeInterface);
+        if ($job instanceof Envelope) {
+            $object = $job->getMessage();
+            $metadata = $job->last(MetadataStamp::class);
+            assert($metadata !== null);
+            $expiresAt = $metadata->metadata['expiresAt'];
+            assert($expiresAt instanceof DateTimeInterface);
+        } else {
+            $object = $job;
+            $metadata = null;
+            $expiresAt = null;
+        }
+
+        $entity = null;
 
         if ($object instanceof CreatePostJob) {
             $image = null;
@@ -97,7 +105,7 @@ final readonly class DatabaseMigrator
                 ->setCheckForUrlDuplicates($object->checkForUrlDuplicates)
                 ->setComments($object->comments)
                 ->setThumbnailUrl($object->thumbnailUrl)
-                ->setScheduledAt(DateTimeImmutable::createFromInterface($expiresAt))
+                ->setScheduledAt(DateTimeImmutable::createFromInterface($expiresAt ?? new DateTimeImmutable()))
                 ->setUserId($userId)
             ;
             $this->entityManager->persist($entity);
@@ -111,11 +119,13 @@ final readonly class DatabaseMigrator
                 ->setUserId($userId)
             ;
             $this->entityManager->persist($entity);
-        } else {
-            return;
         }
 
-        $jobsToDelete[] = $metadata->metadata['jobId'];
+        if ($metadata) {
+            $jobsToDelete[] = $metadata->metadata['jobId'];
+        }
+
+        return $entity;
     }
 
     /**
