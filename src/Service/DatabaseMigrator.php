@@ -3,10 +3,12 @@
 namespace App\Service;
 
 use App\Entity\CreatePostStoredJob;
+use App\Entity\PostPinUnpinStoredJob;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJobV2;
 use App\JobStamp\MetadataStamp;
+use App\Lemmy\LemmyApiFactory;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,7 +27,7 @@ final readonly class DatabaseMigrator
     public function __construct(
         private JobManager             $jobManager,
         private CacheItemPoolInterface $cache,
-        private EntityManagerInterface $entityManager, private FileUploader $fileUploader,
+        private EntityManagerInterface $entityManager, private FileUploader $fileUploader, private LemmyApiFactory $lemmyApi,
     ) {
     }
 
@@ -60,12 +62,11 @@ final readonly class DatabaseMigrator
         $object = $job->getMessage();
         $metadata = $job->last(MetadataStamp::class);
         assert($metadata !== null);
+        $expiresAt = $metadata->metadata['expiresAt'];
+        assert($expiresAt instanceof DateTimeInterface);
 
         if ($object instanceof CreatePostJob) {
-            $expiresAt = $metadata->metadata['expiresAt'];
-            assert($expiresAt instanceof DateTimeInterface);
             $image = null;
-
             if ($object->imageId) {
                 try {
                     $oldFile = $this->fileUploader->get($object->imageId);
@@ -101,7 +102,17 @@ final readonly class DatabaseMigrator
             ;
             $this->entityManager->persist($entity);
         } else if ($object instanceof PinUnpinPostJobV2) {
-
+            $entity = (new PostPinUnpinStoredJob())
+                ->setPostId($object->postId)
+                ->setJwt($object->jwt)
+                ->setInstance($object->instance)
+                ->setScheduledAt(DateTimeImmutable::createFromInterface($expiresAt))
+                ->setPinType($object->pin)
+                ->setUserId($userId)
+            ;
+            $this->entityManager->persist($entity);
+        } else {
+            return;
         }
 
         $jobsToDelete[] = $metadata->metadata['jobId'];

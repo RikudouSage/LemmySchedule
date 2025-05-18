@@ -92,20 +92,21 @@
                             errorDeletingText: "There was an error when cancelling the job." | trans,
                         }) }}>
                             <td>
-                                {{ job.title }} (<a href="{{ job.url }}" target="_blank">{{ job.url }}</a>)
+                                {% set postObj = post(job.postId) %}
+                                {{ postObj.name }} (<a href="{{ postObj | post_url }}" target="_blank">{{ postObj | post_url }}</a>)
                             </td>
                             <td>
-                                {% if job.pin is same as constant('App\\Enum\\PinType::PinToCommunity') %}
+                                {% if job.pinType is same as constant('App\\Enum\\PinType::PinToCommunity') %}
                                     {{ "Pin to community" | trans }}
-                                {% elseif job.pin is same as constant('App\\Enum\\PinType::UnpinFromCommunity') %}
+                                {% elseif job.pinType is same as constant('App\\Enum\\PinType::UnpinFromCommunity') %}
                                     {{ "Unpin from community" | trans }}
-                                {% elseif job.pin is same as constant('App\\Enum\\PinType::PinToInstance') %}
+                                {% elseif job.pinType is same as constant('App\\Enum\\PinType::PinToInstance') %}
                                     {{ "Pin to instance" | trans }}
-                                {% elseif job.pin is same as constant('App\\Enum\\PinType::UnpinFromInstance') %}
+                                {% elseif job.pinType is same as constant('App\\Enum\\PinType::UnpinFromInstance') %}
                                     {{ "Unpin from instance" | trans }}
                                 {% endif %}
                             </td>
-                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
+                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
                             <td>
                                 <button class="btn btn-danger"
                                         type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>

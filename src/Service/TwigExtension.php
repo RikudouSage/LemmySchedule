@@ -13,7 +13,9 @@ use IntlDateFormatter;
 use LogicException;
 use ReflectionClass;
 use ReflectionEnum;
+use Rikudou\LemmyApi\LemmyApi;
 use Rikudou\LemmyApi\Response\Model\Community;
+use Rikudou\LemmyApi\Response\Model\Post;
 use Rikudou\LemmyApi\Response\View\CommunityView;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -41,6 +43,7 @@ final class TwigExtension extends AbstractExtension
             new TwigFilter('timezone_offset', $this->getTimezoneOffset(...)),
             new TwigFilter('community_name', $this->getCommunityName(...)),
             new TwigFilter('class_name', $this->getClassName(...)),
+            new TwigFilter('post_url', $this->getPostUrl(...)),
         ];
     }
 
@@ -56,6 +59,7 @@ final class TwigExtension extends AbstractExtension
         return [
             new TwigFunction('enum', $this->getEnum(...)),
             new TwigFunction('community', $this->getCommunity(...)),
+            new TwigFunction('post', $this->getPost(...)),
         ];
     }
 
@@ -112,12 +116,12 @@ final class TwigExtension extends AbstractExtension
 
     private function getCommunity(int $id): Community
     {
-        $api = $this->currentUserService->getCurrentUser()
-            ? $this->apiFactory->getForCurrentUser()
-            : $this->apiFactory->get($this->defaultInstance)
-        ;
+        return $this->getApi()->community()->get($id)->community;
+    }
 
-        return $api->community()->get($id)->community;
+    private function getPost(int $id): Post
+    {
+        return $this->getApi()->post()->get($id)->post;
     }
 
     private function getCommunityName(Community $community): string
@@ -130,5 +134,19 @@ final class TwigExtension extends AbstractExtension
     private function getClassName(object $object): string
     {
         return $object::class;
+    }
+
+    private function getPostUrl(Post $post): string
+    {
+        $instance = $this->currentUserService->getCurrentUser()?->getInstance() ?? $this->defaultInstance;
+        return "https://{$instance}/post/{$post->id}";
+    }
+
+    private function getApi(): LemmyApi
+    {
+        return $this->currentUserService->getCurrentUser()
+            ? $this->apiFactory->getForCurrentUser()
+            : $this->apiFactory->get($this->defaultInstance)
+        ;
     }
 }

@@ -102,6 +102,9 @@ final class PostController extends AbstractController
         if ($job === null) {
             throw $this->createNotFoundException('Job not found');
         }
+        if ($job->getUserId() !== $this->getUser()->getUserIdentifier()) {
+            throw $this->createAccessDeniedException('You do not have access to this job');
+        }
 
         $nextRuns = null;
         if ($scheduleExpression = $job->getScheduleExpression()) {
@@ -604,6 +607,11 @@ final class PostController extends AbstractController
     {
         $repository = $entityManager->getRepository($type);
         $entity = $repository->find($jobId);
+
+        if ($entity->getUserId() !== $this->getUser()->getUserIdentifier()) {
+            throw $this->createAccessDeniedException('You do not have access to this job');
+        }
+
         if ($entity) {
             $entityManager->remove($entity);
             $entityManager->flush();
