@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Authentication\User;
 use App\Entity\CreatePostStoredJob;
+use App\Entity\PostPinUnpinStoredJob;
 use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
@@ -12,7 +13,7 @@ use App\FileProvider\FileProvider;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJobV2;
 use App\Job\DeleteFileJobV2;
-use App\Job\PinUnpinPostJobV2;
+use App\Job\PinUnpinPostJobV3;
 use App\Job\ReportUnreadPostsJob;
 use App\Lemmy\LemmyApiFactory;
 use App\Repository\CreatePostStoredJobRepository;
@@ -547,8 +548,9 @@ final class PostController extends AbstractController
     public function doPinPost(
         Request $request,
         TranslatorInterface $translator,
-        JobManager $jobManager,
+        JobScheduler $jobScheduler,
         CurrentUserService $currentUserService,
+        EntityManagerInterface $entityManager,
     ): Response {
         $errorResponse = fn () => $this->render('post/pin.html.twig');
 
@@ -600,13 +602,19 @@ final class PostController extends AbstractController
         }
 
         $dateTime = new DateTimeImmutable("{$request->request->get('scheduleDateTime')}:00{$request->request->get('timezoneOffset')}");
-        $jobManager->createJob(
-            new PinUnpinPostJobV2(
-                postId: (int) $urlOrId,
-                jwt: $currentUserService->getCurrentUser()?->getJwt() ?? throw new LogicException('No user logged in'),
-                instance: $currentUserService->getCurrentUser()?->getInstance() ?? throw new LogicException('No user logged in'),
-                pin: $pin,
-            ),
+        $entity = (new PostPinUnpinStoredJob())
+            ->setPostId((int) $urlOrId)
+            ->setJwt($currentUserService->getCurrentUser()?->getJwt() ?? throw new LogicException('No user logged in'))
+            ->setInstance($currentUserService->getCurrentUser()?->getInstance() ?? throw new LogicException('No user logged in'))
+            ->setUserId($currentUserService->getCurrentUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'))
+            ->setPinType($pin)
+            ->setScheduledAt($dateTime)
+        ;
+        $entityManager->persist($entity);
+        $entityManager->flush();
+
+        $jobScheduler->schedule(
+            new PinUnpinPostJobV3($entity->getId()),
             $dateTime,
         );
         $this->addFlash('success', $translator->trans('Post pin/unpin was successfully scheduled.'));
