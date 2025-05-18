@@ -15,6 +15,10 @@
         "bref/extra-php-extensions": "^1.4",
         "bref/symfony-bridge": "^0.2.2",
         "bref/symfony-messenger": "^0.5.4",
+        "doctrine/dbal": "^3",
+        "doctrine/doctrine-bundle": "^2.14",
+        "doctrine/doctrine-migrations-bundle": "^3.4",
+        "doctrine/orm": "^3.3",
         "dragonmantank/cron-expression": "^3.3",
         "league/commonmark": "^2.7",
         "nyholm/psr7": "^1.8",
@@ -98,7 +102,8 @@
     "extra": {
         "symfony": {
             "allow-contrib": true,
-            "require": "6.4.*"
+            "require": "6.4.*",
+            "docker": true
         }
     },
     "require-dev": {

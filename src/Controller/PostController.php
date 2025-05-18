@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Authentication\User;
-use App\Dto\CommunityGroup;
 use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
@@ -12,11 +11,12 @@ use App\FileProvider\FileProvider;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
 use App\Job\DeleteFileJob;
-use App\Job\PinUnpinPostJob;
 use App\Job\PinUnpinPostJobV2;
 use App\Job\ReportUnreadPostsJob;
-use App\JobStamp\MetadataStamp;
 use App\Lemmy\LemmyApiFactory;
+use App\Repository\CreatePostStoredJobRepository;
+use App\Repository\PostPinUnpinStoredJobRepository;
+use App\Repository\UnreadPostReportStoredJobRepository;
 use App\Service\CommunityGroupManager;
 use App\Service\CurrentUserService;
 use App\Service\JobManager;
@@ -24,8 +24,8 @@ use App\Service\ScheduleExpressionParser;
 use App\Service\TitleExpressionReplacer;
 use DateInterval;
 use DateTimeImmutable;
-use DateTimeInterface;
 use DateTimeZone;
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
@@ -42,10 +42,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Uid\Uuid;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/post')]
@@ -67,116 +64,25 @@ final class PostController extends AbstractController
     }
 
     #[Route('/list', name: 'app.post.list', methods: [Request::METHOD_GET])]
-    public function listPosts(JobManager $jobManager, LemmyApiFactory $apiFactory, bool $unreadPostsEnabled): Response
-    {
-        $api = $apiFactory->getForCurrentUser();
+    public function listPosts(
+        bool                            $unreadPostsEnabled,
+        CreatePostStoredJobRepository   $createJobRepository,
+        PostPinUnpinStoredJobRepository $pinJobRepository,
+        UnreadPostReportStoredJobRepository $reportJobRepository,
+    ): Response {
+        if (!$this->getUser()) {
+            throw $this->createNotFoundException('No user logged in');
+        }
 
-        $postCreateJobs = array_filter($jobManager->listJobs(), static function (Envelope $envelope) use ($jobManager) {
-            $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
-
-            return $envelope->getMessage() instanceof CreatePostJob && $jobId && !$jobManager->isCancelled($jobId);
-        });
-        $postCreateJobs = array_map(static function (Envelope $job) {
-            $message = $job->getMessage();
-            assert($message instanceof CreatePostJob);
-
-            $community = "!{$message->community->name}@" . parse_url($message->community->actorId, PHP_URL_HOST);
-            $title = $message->title;
-
-            $metadata = $job->last(MetadataStamp::class);
-            assert($metadata !== null);
-
-            $dateTime = $metadata->metadata['expiresAt'];
-            assert($dateTime instanceof DateTimeInterface);
-            $id = $metadata->metadata['jobId'];
-
-            return [
-                'jobId' => $id,
-                'dateTime' => $dateTime->format('c'),
-                'community' => $community,
-                'title' => $title,
-                'recurring' => $message->scheduleExpression !== null,
-            ];
-        }, $postCreateJobs);
-        usort($postCreateJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
-
-        $postPinJobs = array_filter($jobManager->listJobs(), static function (Envelope $envelope) use ($jobManager) {
-            $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
-
-            return ($envelope->getMessage() instanceof PinUnpinPostJob || $envelope->getMessage() instanceof PinUnpinPostJobV2)
-                && $jobId && !$jobManager->isCancelled($jobId);
-        });
-        $postPinJobs = array_map(static function (Envelope $job) use ($api) {
-            $message = $job->getMessage();
-            assert($message instanceof PinUnpinPostJob || $message instanceof PinUnpinPostJobV2);
-
-            $metadata = $job->last(MetadataStamp::class);
-            assert($metadata !== null);
-
-            $dateTime = $metadata->metadata['expiresAt'];
-            assert($dateTime instanceof DateTimeInterface);
-            $id = $metadata->metadata['jobId'];
-
-            try {
-                $post = $api->post()->get($message->postId);
-            } catch (LemmyApiException) {
-                $post = null;
-            }
-
-            return [
-                'jobId' => $id,
-                'dateTime' => $dateTime->format('c'),
-                'url' => "https://{$message->instance}/post/{$message->postId}",
-                'title' => $post?->post->name ?? 'Unknown',
-                'pin' => $message instanceof PinUnpinPostJob
-                    ? ($message->pin ? PinType::PinToCommunity : PinType::UnpinFromCommunity)
-                    : $message->pin,
-            ];
-        }, $postPinJobs);
-        usort($postPinJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
-
-        $postReportJobs = array_map(
-            fn (Envelope $job) => $this->getJobArray($job, callbacks: [
-                'community' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->community === null) {
-                        return null;
-                    }
-                    $host = parse_url($job->community->actorId, PHP_URL_HOST);
-
-                    return "!{$job->community->name}@{$host}";
-                },
-                'user' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->person === null) {
-                        return null;
-                    }
-                    $host = parse_url($job->person->actorId, PHP_URL_HOST);
-
-                    return "@{$job->person->name}@{$host}";
-                },
-                'communityUrl' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->community === null) {
-                        return null;
-                    }
-                    $host = parse_url($job->community->actorId, PHP_URL_HOST);
-                    $community = "{$job->community->name}@{$host}";
-
-                    return "https://{$job->instance}/c/{$community}";
-                },
-                'userUrl' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->person === null) {
-                        return null;
-                    }
-
-                    $host = parse_url($job->person->actorId, PHP_URL_HOST);
-                    $user = "{$job->person->name}@{$host}";
-
-                    return "https://{$job->instance}/u/{$user}";
-                },
-                'recurring' => static fn (ReportUnreadPostsJob $job) => $job->scheduleExpression !== null,
-            ]),
-            $jobManager->getActiveJobsByType(ReportUnreadPostsJob::class),
-        );
-        usort($postReportJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
+        $postCreateJobs = $createJobRepository->findBy([
+            'userId' => $this->getUser()->getUserIdentifier(),
+        ], ['scheduledAt' => 'DESC']);
+        $postPinJobs = $pinJobRepository->findBy([
+            'userId' => $this->getUser()->getUserIdentifier(),
+        ], ['scheduledAt' => 'DESC']);
+        $postReportJobs = $reportJobRepository->findBy([
+            'userId' => $this->getUser()->getUserIdentifier(),
+        ], ['scheduledAt' => 'DESC']);
 
         return $this->render('post/list.html.twig', [
             'postCreateJobs' => $postCreateJobs,
@@ -188,45 +94,27 @@ final class PostController extends AbstractController
 
     #[Route('/detail/{jobId}', name: 'app.post.detail', methods: [Request::METHOD_GET])]
     public function detail(
-        Uuid $jobId,
-        JobManager $jobManager,
+        int $jobId,
         ScheduleExpressionParser $scheduleExpressionParser,
+        CreatePostStoredJobRepository $createJobRepository,
     ): Response {
-        $job = $jobManager->getJob($jobId);
-        $message = $job?->getMessage();
-        if (!$message instanceof CreatePostJob) {
-            throw $this->createNotFoundException();
+        $job = $createJobRepository->find($jobId);
+        if ($job === null) {
+            throw $this->createNotFoundException('Job not found');
         }
 
-        $metadata = $job->last(MetadataStamp::class);
-        assert($metadata !== null);
-
-        $dateTime = $metadata->metadata['expiresAt'];
-        assert($dateTime instanceof DateTimeInterface);
-
-        $job = [
-            'jobId' => (string) $jobId,
-            'text' => $message->text,
-            'url' => $message->url,
-            'title' => $message->title,
-            'community' => sprintf('!%s@%s', $message->community->name, parse_url($message->community->actorId, PHP_URL_HOST)),
-            'nsfw' => $message->nsfw,
-            'pinToCommunity' => $message->pinToCommunity,
-            'pinToInstance' => $message->pinToInstance,
-            'language' => $message->language,
-            'image' => $message->imageId,
-            'recurring' => $message->scheduleExpression !== null,
-            'dateTime' => $dateTime,
-            'nextRuns' => $message->scheduleExpression ? [
-                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 1, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
-                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 2, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
-                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 3, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
-            ] : null,
-            'unpinAt' => $message->unpinAt,
-        ];
+        $nextRuns = null;
+        if ($scheduleExpression = $job->getScheduleExpression()) {
+            $nextRuns = [
+                $scheduleExpressionParser->getNextRunDate(expression: $scheduleExpression, nth: 1, timeZone: new DateTimeZone($job->getScheduleTimezone())),
+                $scheduleExpressionParser->getNextRunDate(expression: $scheduleExpression, nth: 2, timeZone: new DateTimeZone($job->getScheduleTimezone())),
+                $scheduleExpressionParser->getNextRunDate(expression: $scheduleExpression, nth: 3, timeZone: new DateTimeZone($job->getScheduleTimezone())),
+            ];
+        }
 
         return $this->render('post/detail.html.twig', [
             'job' => $job,
+            'nextRuns' => $nextRuns,
         ]);
     }
 
@@ -711,10 +599,15 @@ final class PostController extends AbstractController
         return $this->redirectToRoute('app.post.list');
     }
 
-    #[Route('/ajax/cancel/{jobId}', name: 'app.post.ajax.cancel', methods: [Request::METHOD_DELETE])]
-    public function cancelJob(Uuid $jobId, JobManager $jobManager): JsonResponse
+    #[Route('/ajax/cancel/{type}/{jobId}', name: 'app.post.ajax.cancel', methods: [Request::METHOD_DELETE])]
+    public function cancelJob(int $jobId, string $type, EntityManagerInterface $entityManager): JsonResponse
     {
-        $jobManager->cancelJob($jobId);
+        $repository = $entityManager->getRepository($type);
+        $entity = $repository->find($jobId);
+        if ($entity) {
+            $entityManager->remove($entity);
+            $entityManager->flush();
+        }
 
         return new JsonResponse(status: Response::HTTP_NO_CONTENT);
     }
@@ -841,42 +734,5 @@ final class PostController extends AbstractController
         $cacheItem = $this->cache->getItem("community_list_{$user->getInstance()}");
 
         return $cacheItem->isHit() ? $cacheItem->get() : [];
-    }
-
-    /**
-     * @param array<string|int, string>                       $fields
-     * @param array<string, callable(object $message): mixed> $callbacks
-     */
-    private function getJobArray(Envelope $job, array $fields = [], array $callbacks = []): array
-    {
-        $metadata = $job->last(MetadataStamp::class);
-        assert($metadata !== null);
-
-        $dateTime = $metadata->metadata['expiresAt'];
-        assert($dateTime instanceof DateTimeInterface);
-        $id = $metadata->metadata['jobId'];
-
-        $result = [
-            'jobId' => $id,
-            'dateTime' => $dateTime->format('c'),
-        ];
-
-        if (!count($fields) && !count($callbacks)) {
-            return $result;
-        }
-
-        $message = $job->getMessage();
-        foreach ($fields as $sourceField => $targetField) {
-            if (is_int($sourceField)) {
-                $sourceField = $targetField;
-            }
-            $result[$sourceField] = $message->{$targetField};
-        }
-
-        foreach ($callbacks as $field => $callback) {
-            $result[$field] = $callback($message);
-        }
-
-        return $result;
     }
 }

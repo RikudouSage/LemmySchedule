@@ -10,22 +10,22 @@
                     <tbody>
                     <tr>
                         <td><strong>{{ "Job ID" | trans }}</strong></td>
-                        <td>{{ job.jobId }}</td>
+                        <td>{{ job.id }}</td>
                     </tr>
                     <tr>
                         <td><strong>{{ "Scheduled at" | trans }}</strong></td>
-                        <td {{ stimulus_controller('local-date-time') }}>{{ job.dateTime | date('c') }}</td>
+                        <td {{ stimulus_controller('local-date-time') }}>{{ job.scheduledAt | date('c') }}</td>
                     </tr>
                     <tr>
                         <td><strong>{{ "Recurring post" | trans }}</strong></td>
-                        <td>{{ job.recurring ? "Yes" | trans : "No" | trans }}</td>
+                        <td>{{ job.scheduleExpression ? "Yes" | trans : "No" | trans }}</td>
                     </tr>
-                    {% if job.recurring %}
+                    {% if job.scheduleExpression %}
                         <tr>
                             <td><strong>{{ "Next runs" | trans }}</strong></td>
                             <td>
                                 <ul>
-                                    {% for nextRun in job.nextRuns %}
+                                    {% for nextRun in nextRuns %}
                                         <li {{ stimulus_controller('local-date-time') }}>
                                             {{ nextRun.format('c') }}
                                         </li>
@@ -40,7 +40,7 @@
                     </tr>
                     <tr>
                         <td><strong>{{ "Community" | trans }}</strong></td>
-                        <td>{{ job.community }}</td>
+                        <td>{{ community(job.communityId) | community_name }}</td>
                     </tr>
                     <tr>
                         <td><strong>{{ "URL" | trans }}</strong></td>

@@ -4,13 +4,19 @@ namespace App\Service;
 
 use App\Dto\Time;
 use App\Enum\Feature;
+use App\Lemmy\LemmyApiFactory;
+use App\Service\CurrentUserService;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use IntlDateFormatter;
 use LogicException;
+use ReflectionClass;
 use ReflectionEnum;
+use Rikudou\LemmyApi\Response\Model\Community;
+use Rikudou\LemmyApi\Response\View\CommunityView;
 use RuntimeException;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -21,6 +27,10 @@ final class TwigExtension extends AbstractExtension
 {
     public function __construct(
         private readonly SupportedFeaturesManager $featuresManager,
+        private readonly LemmyApiFactory $apiFactory,
+        private readonly CurrentUserService $currentUserService,
+        #[Autowire('%app.default_instance%')]
+        private readonly string $defaultInstance,
     ) {
     }
 
@@ -29,6 +39,8 @@ final class TwigExtension extends AbstractExtension
         return [
             new TwigFilter('format_date_time', $this->formatDate(...)),
             new TwigFilter('timezone_offset', $this->getTimezoneOffset(...)),
+            new TwigFilter('community_name', $this->getCommunityName(...)),
+            new TwigFilter('class_name', $this->getClassName(...)),
         ];
     }
 
@@ -43,6 +55,7 @@ final class TwigExtension extends AbstractExtension
     {
         return [
             new TwigFunction('enum', $this->getEnum(...)),
+            new TwigFunction('community', $this->getCommunity(...)),
         ];
     }
 
@@ -95,5 +108,27 @@ final class TwigExtension extends AbstractExtension
                 return (new ReflectionEnum($this->class))->getCase($name)->getValue();
             }
         };
+    }
+
+    private function getCommunity(int $id): Community
+    {
+        $api = $this->currentUserService->getCurrentUser()
+            ? $this->apiFactory->getForCurrentUser()
+            : $this->apiFactory->get($this->defaultInstance)
+        ;
+
+        return $api->community()->get($id)->community;
+    }
+
+    private function getCommunityName(Community $community): string
+    {
+        $host = parse_url($community->actorId, PHP_URL_HOST);
+
+        return "!{$community->name}@{$host}";
+    }
+
+    private function getClassName(object $object): string
+    {
+        return $object::class;
     }
 }

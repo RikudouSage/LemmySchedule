@@ -29,18 +29,19 @@
                     {% for job in postCreateJobs %}
                         <tr {{ stimulus_controller('scheduled-job', {
                             cancelUrl: path('app.post.ajax.cancel', {
-                                jobId: job.jobId,
+                                type: job | class_name,
+                                jobId: job.id,
                             }),
                             errorDeletingText: "There was an error when cancelling the job." | trans,
                         }) }}>
                             <td>
-                                <a href="{{ path('app.post.detail', {jobId: job.jobId}) }}">
+                                <a href="{{ path('app.post.detail', {jobId: job.id}) }}">
                                     {{ job.title }}
                                 </a>
                             </td>
-                            <td>{{ job.community }}</td>
-                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
-                            <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
+                            <td>{{ community(job.communityId) | community_name }}</td>
+                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
+                            <td>{{ job.scheduleExpression ? 'Yes' | trans : "No" | trans }}</td>
                             <td>
                                 <button class="btn btn-danger"
                                         type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
@@ -85,7 +86,8 @@
                     {% for job in postPinJobs %}
                         <tr {{ stimulus_controller('scheduled-job', {
                             cancelUrl: path('app.post.ajax.cancel', {
-                                jobId: job.jobId,
+                                type: job | class_name,
+                                jobId: job.id,
                             }),
                             errorDeletingText: "There was an error when cancelling the job." | trans,
                         }) }}>
@@ -149,7 +151,8 @@
                         {% for job in postReportJobs %}
                             <tr {{ stimulus_controller('scheduled-job', {
                                 cancelUrl: path('app.post.ajax.cancel', {
-                                    jobId: job.jobId,
+                                    type: job | class_name,
+                                    jobId: job.id,
                                 }),
                                 errorDeletingText: "There was an error when cancelling the job." | trans,
                             }) }}>

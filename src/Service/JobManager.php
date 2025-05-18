@@ -75,9 +75,9 @@ final readonly class JobManager
     /**
      * @return array<Envelope>
      */
-    public function listJobs(): array
+    public function listJobsForUser(string $userId): array
     {
-        $cacheItemList = $this->cache->getItem("job_list_{$this->getUserIdentifier()}");
+        $cacheItemList = $this->cache->getItem("job_list_{$this->replaceUserIdentifier($userId)}");
         $list = $cacheItemList->isHit() ? $cacheItemList->get() : [];
 
         $changed = false;
@@ -99,6 +99,14 @@ final readonly class JobManager
         }
 
         return $result;
+    }
+
+    /**
+     * @return array<Envelope>
+     */
+    public function listJobs(): array
+    {
+        return $this->listJobsForUser($this->getUserIdentifier());
     }
 
     public function createJob(object $message, ?DateTimeInterface $runAt): void
@@ -139,6 +147,11 @@ final readonly class JobManager
 
     private function getUserIdentifier(): string
     {
-        return str_replace('@', '___', $this->currentUserService->getCurrentUser()?->getUserIdentifier() ?? '');
+        return $this->replaceUserIdentifier($this->currentUserService->getCurrentUser()?->getUserIdentifier() ?? '');
+    }
+
+    private function replaceUserIdentifier(string $userIdentifier): string
+    {
+        return str_replace('@', '___', $userIdentifier);
     }
 }
