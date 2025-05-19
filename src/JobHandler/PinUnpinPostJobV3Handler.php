@@ -15,9 +15,9 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 final readonly class PinUnpinPostJobV3Handler
 {
     public function __construct(
-        private LemmyApiFactory                 $apiFactory,
+        private LemmyApiFactory $apiFactory,
         private PostPinUnpinStoredJobRepository $jobRepository,
-        private EntityManagerInterface          $entityManager,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -27,7 +27,6 @@ final readonly class PinUnpinPostJobV3Handler
         if ($job === null) {
             return;
         }
-
 
         try {
             $api = $this->apiFactory->get($job->getInstance(), jwt: $job->getJwt());

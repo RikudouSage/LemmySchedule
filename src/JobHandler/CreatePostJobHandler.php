@@ -19,9 +19,9 @@ use Symfony\Component\Messenger\Stamp\DispatchAfterCurrentBusStamp;
 final readonly class CreatePostJobHandler
 {
     public function __construct(
-        private LemmyApiFactory        $apiFactory,
-        private CurrentUserService     $currentUserService,
-        private DatabaseMigrator       $databaseMigrator,
+        private LemmyApiFactory $apiFactory,
+        private CurrentUserService $currentUserService,
+        private DatabaseMigrator $databaseMigrator,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
     ) {

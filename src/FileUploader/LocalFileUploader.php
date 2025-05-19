@@ -13,7 +13,7 @@ use Symfony\Component\Uid\Uuid;
 final readonly class LocalFileUploader implements FileUploader
 {
     public function __construct(
-        private string               $uploadPath,
+        private string $uploadPath,
         private ImageMetadataRemover $metadataRemover,
         private StoredFileRepository $storedFileRepository,
         private EntityManagerInterface $entityManager,

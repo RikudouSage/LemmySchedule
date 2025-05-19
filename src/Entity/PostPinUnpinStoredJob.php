@@ -5,7 +5,7 @@ namespace App\Entity;
 use App\Helper\CommonJobEntityFieldsTrait;
 use App\Repository\PostPinUnpinStoredJobRepository;
 use Doctrine\ORM\Mapping as ORM;
-use \App\Enum\PinType;
+use App\Enum\PinType;
 
 #[ORM\Entity(repositoryClass: PostPinUnpinStoredJobRepository::class)]
 class PostPinUnpinStoredJob

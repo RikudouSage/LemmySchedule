@@ -26,8 +26,8 @@ final readonly class SupportedFeaturesManager
             throw new LogicException('Unhandled feature: ' . $feature->name);
         }
 
-        $user = $this->security->getToken()?->getUser() ??
-            throw new LogicException('No one is logged in');
+        $user = $this->security->getToken()?->getUser()
+            ?? throw new LogicException('No one is logged in');
         assert($user instanceof User);
 
         return $handler($user);

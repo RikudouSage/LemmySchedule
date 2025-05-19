@@ -15,7 +15,6 @@ use App\FileUploader\FileUploader;
 use App\Job\CreatePostJobV2;
 use App\Job\DeleteFileJobV2;
 use App\Job\PinUnpinPostJobV3;
-use App\Job\ReportUnreadPostsJob;
 use App\Job\ReportUnreadPostsJobV2;
 use App\Lemmy\LemmyApiFactory;
 use App\Repository\CreatePostStoredJobRepository;
@@ -23,7 +22,6 @@ use App\Repository\PostPinUnpinStoredJobRepository;
 use App\Repository\UnreadPostReportStoredJobRepository;
 use App\Service\CommunityGroupManager;
 use App\Service\CurrentUserService;
-use App\Service\JobManager;
 use App\Service\JobScheduler;
 use App\Service\ScheduleExpressionParser;
 use App\Service\TitleExpressionReplacer;
@@ -61,8 +59,7 @@ final class PostController extends AbstractController
     #[Route('/help/expressions', name: 'app.post.expressions_help', methods: [Request::METHOD_GET])]
     public function expressionsHelp(
         TitleExpressionReplacer $expressionReplacer,
-    ): Response
-    {
+    ): Response {
         return $this->render('post/expressions_help.html.twig', [
             'expression' => $expressionReplacer,
         ]);
@@ -70,8 +67,8 @@ final class PostController extends AbstractController
 
     #[Route('/list', name: 'app.post.list', methods: [Request::METHOD_GET])]
     public function listPosts(
-        bool                            $unreadPostsEnabled,
-        CreatePostStoredJobRepository   $createJobRepository,
+        bool $unreadPostsEnabled,
+        CreatePostStoredJobRepository $createJobRepository,
         PostPinUnpinStoredJobRepository $pinJobRepository,
         UnreadPostReportStoredJobRepository $reportJobRepository,
     ): Response {
@@ -146,7 +143,7 @@ final class PostController extends AbstractController
         }
 
         $defaultCommunities = array_map(
-            fn (string $community) => str_starts_with($community, '!') ? $community : '!' . $community,
+            static fn (string $community) => str_starts_with($community, '!') ? $community : '!' . $community,
             $defaultCommunities,
         );
 
@@ -734,6 +731,7 @@ final class PostController extends AbstractController
         HttpBrowser $browser,
     ): JsonResponse {
         $title = null;
+
         try {
             $json = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
             if (!isset($json['url'])) {
@@ -746,7 +744,7 @@ final class PostController extends AbstractController
 
             if ($ogTitleTag->count()) {
                 $title = $ogTitleTag->first()->attr('content');
-            } else if ($titleTag->count()) {
+            } elseif ($titleTag->count()) {
                 $title = $titleTag->first()->text();
             }
         } catch (Exception $e) {

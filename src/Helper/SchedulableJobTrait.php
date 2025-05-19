@@ -12,7 +12,6 @@ trait SchedulableJobTrait
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $scheduleTimezone = null;
 
-
     public function getScheduleExpression(): ?string
     {
         return $this->scheduleExpression;

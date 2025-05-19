@@ -22,7 +22,7 @@ final readonly class CounterInjectableExpression implements InjectableExpression
     {
         return new ExpressionFunction(
             $this->getName(),
-            fn () => throw new RuntimeException('This function cannot be compiled'),
+            static fn () => throw new RuntimeException('This function cannot be compiled'),
             function (array $arguments, string $counterName): string {
                 $counter = $this->repository->findByName($counterName);
                 if ($counter === null) {

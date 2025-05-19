@@ -53,18 +53,22 @@ final class CountersController extends AbstractController
 
             if (!trim($name)) {
                 $this->addFlash('error', $translator->trans('Name cannot be empty.'));
+
                 return $response();
             }
             if ($counter && $counter->name !== $name) {
                 $this->addFlash('error', $translator->trans('Cannot change the name of the counter.'));
+
                 return $response();
             }
             if ($isNew && $countersRepository->findByName($name)) {
                 $this->addFlash('error', $translator->trans('Counter with the same name already exists.'));
+
                 return $response();
             }
             if ($incrementBy === 0) {
                 $this->addFlash('error', $translator->trans('Counter must be incremented by a negative or positive value, but it cannot be 0.'));
+
                 return $response();
             }
 
@@ -89,6 +93,7 @@ final class CountersController extends AbstractController
     public function delete(string $name, CountersRepository $repository): RedirectResponse
     {
         $repository->delete($name);
+
         return $this->redirectToRoute('app.counters.list');
     }
 }

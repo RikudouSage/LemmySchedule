@@ -19,10 +19,11 @@ use Symfony\Component\Messenger\Stamp\DispatchAfterCurrentBusStamp;
 final readonly class PinUnpinPostJobV2Handler
 {
     public function __construct(
-        private LemmyApiFactory        $apiFactory,
-        private DatabaseMigrator       $databaseMigrator,
-        private CurrentUserService     $currentUserService,
-        private EntityManagerInterface $entityManager, private MessageBusInterface $messageBus,
+        private LemmyApiFactory $apiFactory,
+        private DatabaseMigrator $databaseMigrator,
+        private CurrentUserService $currentUserService,
+        private EntityManagerInterface $entityManager,
+        private MessageBusInterface $messageBus,
     ) {
     }
 

@@ -15,8 +15,8 @@ use Symfony\Component\Uid\Uuid;
 final readonly class S3FileUploader implements FileUploader
 {
     public function __construct(
-        private S3Client             $s3client,
-        private string               $bucket,
+        private S3Client $s3client,
+        private string $bucket,
         private TemporaryFileCleaner $fileCleaner,
         private ImageMetadataRemover $metadataRemover,
         private StoredFileRepository $storedFileRepository,

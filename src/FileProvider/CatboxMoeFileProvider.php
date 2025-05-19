@@ -32,6 +32,7 @@ final readonly class CatboxMoeFileProvider implements FileProvider
         $extension = $this->mimeTypes->getExtensions($mimeType)[0] ?? null;
 
         $tempFile = sys_get_temp_dir() . '/' . $fileId . '.' . $extension;
+
         try {
             copy($image->getRealPath(), $tempFile);
 

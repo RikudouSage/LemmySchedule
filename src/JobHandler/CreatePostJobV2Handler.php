@@ -35,13 +35,13 @@ final readonly class CreatePostJobV2Handler
      * @param iterable<FileProvider> $fileProviders
      */
     public function __construct(
-        private LemmyApiFactory               $apiFactory,
-        private ScheduleExpressionParser      $scheduleExpressionParser,
-        private CurrentUserService            $currentUserService,
+        private LemmyApiFactory $apiFactory,
+        private ScheduleExpressionParser $scheduleExpressionParser,
+        private CurrentUserService $currentUserService,
         #[TaggedIterator('app.file_provider')]
-        private iterable                      $fileProviders,
-        private TitleExpressionReplacer       $expressionReplacer,
-        private CountersRepository            $countersRepository,
+        private iterable $fileProviders,
+        private TitleExpressionReplacer $expressionReplacer,
+        private CountersRepository $countersRepository,
         private CreatePostStoredJobRepository $jobRepository,
         private JobScheduler $jobScheduler,
         private EntityManagerInterface $entityManager,
@@ -127,7 +127,7 @@ final readonly class CreatePostJobV2Handler
                     timeZone: new DateTimeZone($job->getScheduleTimezone()),
                 );
 
-                $this->jobScheduler->schedule($job, $nextDate);;
+                $this->jobScheduler->schedule($job, $nextDate);
 
                 $job->setScheduledAt(DateTimeImmutable::createFromInterface($nextDate));
                 $this->entityManager->persist($job);

@@ -24,12 +24,12 @@ final readonly class ReportUnreadPostsJobV2Handler
     private LemmyApi $botApi;
 
     public function __construct(
-        private LemmyApiFactory                     $apiFactory,
-        private ScheduleExpressionParser            $scheduleExpressionParser,
-        private CurrentUserService                  $currentUserService,
+        private LemmyApiFactory $apiFactory,
+        private ScheduleExpressionParser $scheduleExpressionParser,
+        private CurrentUserService $currentUserService,
         private UnreadPostReportStoredJobRepository $jobRepository,
-        string                                      $botJwt,
-        string                                      $botInstance,
+        string $botJwt,
+        string $botInstance,
         private JobScheduler $jobScheduler,
     ) {
         $this->botApi = $this->apiFactory->get(instance: $botInstance, jwt: $botJwt);
@@ -94,7 +94,7 @@ final readonly class ReportUnreadPostsJobV2Handler
                     expression: $expression,
                     timeZone: new DateTimeZone($job->getScheduleTimezone()),
                 );
-                $this->jobScheduler->schedule($message, $nextDate);;
+                $this->jobScheduler->schedule($message, $nextDate);
             }
         }
     }

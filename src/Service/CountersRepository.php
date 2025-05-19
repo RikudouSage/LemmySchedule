@@ -76,12 +76,14 @@ final readonly class CountersRepository
         if (!is_string($configuration)) {
             $configuration = $configuration->name;
         }
+
         return $this->normalizeKey("counter.{$this->currentUserService->getCurrentUser()->getUserIdentifier()}.{$configuration}");
     }
 
     private function normalizeKey(string $key): string
     {
         $reservedCharacters = str_split(ItemInterface::RESERVED_CHARACTERS);
+
         return str_replace(
             $reservedCharacters,
             '___',
@@ -92,11 +94,13 @@ final readonly class CountersRepository
     private function getListItem(): CacheItemInterface
     {
         $listKey = $this->normalizeKey("counter.{$this->currentUserService->getCurrentUser()->getUserIdentifier()}");
+
         return $this->cache->getItem($listKey);
     }
 
     /**
      * @param array<string> $list
+     *
      * @return array<string>
      */
     private function cleanupList(array $list): array

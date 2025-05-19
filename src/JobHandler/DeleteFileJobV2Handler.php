@@ -12,7 +12,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 final readonly class DeleteFileJobV2Handler
 {
     public function __construct(
-        private FileUploader         $uploader,
+        private FileUploader $uploader,
         private StoredFileRepository $fileRepository,
         private EntityManagerInterface $entityManager,
     ) {
@@ -24,6 +24,7 @@ final readonly class DeleteFileJobV2Handler
         if ($entity === null) {
             return;
         }
+
         try {
             $this->uploader->delete($job->fileId);
         } finally {

@@ -5,26 +5,22 @@ namespace App\Service;
 use App\Dto\Time;
 use App\Enum\Feature;
 use App\Lemmy\LemmyApiFactory;
-use App\Service\CurrentUserService;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use IntlDateFormatter;
 use LogicException;
-use ReflectionClass;
 use ReflectionEnum;
 use Rikudou\LemmyApi\LemmyApi;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Rikudou\LemmyApi\Response\Model\Person;
 use Rikudou\LemmyApi\Response\Model\Post;
-use Rikudou\LemmyApi\Response\View\CommunityView;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 use Twig\TwigTest;
-use function ReflectionClass;
 
 final class TwigExtension extends AbstractExtension
 {
@@ -105,8 +101,7 @@ final class TwigExtension extends AbstractExtension
             throw new LogicException("The enum '{$class}' does not exist");
         }
 
-        return new readonly class($class)
-        {
+        return new readonly class ($class) {
             public function __construct(
                 private string $class,
             ) {
@@ -156,6 +151,7 @@ final class TwigExtension extends AbstractExtension
     private function getPostUrl(Post $post): string
     {
         $instance = $this->currentUserService->getCurrentUser()?->getInstance() ?? $this->defaultInstance;
+
         return "https://{$instance}/post/{$post->id}";
     }
 

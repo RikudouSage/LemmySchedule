@@ -27,9 +27,11 @@ use Symfony\Component\Uid\Uuid;
 final readonly class DatabaseMigrator
 {
     public function __construct(
-        private JobManager             $jobManager,
+        private JobManager $jobManager,
         private CacheItemPoolInterface $cache,
-        private EntityManagerInterface $entityManager, private FileUploader $fileUploader, private LemmyApiFactory $lemmyApi,
+        private EntityManagerInterface $entityManager,
+        private FileUploader $fileUploader,
+        private LemmyApiFactory $lemmyApi,
     ) {
     }
 
@@ -112,7 +114,7 @@ final readonly class DatabaseMigrator
                 ->setUserId($userId)
             ;
             $this->entityManager->persist($entity);
-        } else if ($object instanceof PinUnpinPostJobV2) {
+        } elseif ($object instanceof PinUnpinPostJobV2) {
             $entity = (new PostPinUnpinStoredJob())
                 ->setPostId($object->postId)
                 ->setJwt($object->jwt)
@@ -122,7 +124,7 @@ final readonly class DatabaseMigrator
                 ->setUserId($userId)
             ;
             $this->entityManager->persist($entity);
-        } else if ($object instanceof ReportUnreadPostsJob) {
+        } elseif ($object instanceof ReportUnreadPostsJob) {
             $entity = (new UnreadPostReportStoredJob())
                 ->setJwt($object->jwt)
                 ->setInstance($object->instance)
@@ -165,7 +167,7 @@ final readonly class DatabaseMigrator
                     continue;
                 }
 
-                $regex = "@job_list_(?<user>.+?)___(?<instance>.+)@";
+                $regex = '@job_list_(?<user>.+?)___(?<instance>.+)@';
                 if (!preg_match($regex, $key, $matches)) {
                     continue;
                 }
