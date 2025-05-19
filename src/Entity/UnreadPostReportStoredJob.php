@@ -7,6 +7,7 @@ use App\Helper\SchedulableJobTrait;
 use App\Repository\UnreadPostReportStoredJobRepository;
 use Doctrine\ORM\Mapping as ORM;
 
+#[ORM\Index(fields: ['userId'])]
 #[ORM\Entity(repositoryClass: UnreadPostReportStoredJobRepository::class)]
 class UnreadPostReportStoredJob
 {

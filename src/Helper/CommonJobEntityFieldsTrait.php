@@ -7,10 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 trait CommonJobEntityFieldsTrait
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    use DefaultIdEntityTrait;
 
     #[ORM\Column(length: 255)]
     private ?string $jwt = null;

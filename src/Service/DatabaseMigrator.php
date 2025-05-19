@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\CommunityGroup;
 use App\Entity\CreatePostStoredJob;
 use App\Entity\PostPinUnpinStoredJob;
 use App\Entity\UnreadPostReportStoredJob;
@@ -15,10 +16,14 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use JetBrains\PhpStorm\Language;
 use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Cache\InvalidArgumentException;
+use ReflectionException;
 use ReflectionMethod;
 use ReflectionProperty;
+use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\TraceableAdapter;
 use Symfony\Component\Messenger\Envelope;
@@ -27,14 +32,18 @@ use Symfony\Component\Uid\Uuid;
 final readonly class DatabaseMigrator
 {
     public function __construct(
-        private JobManager $jobManager,
+        private JobManager             $jobManager,
         private CacheItemPoolInterface $cache,
         private EntityManagerInterface $entityManager,
-        private FileUploader $fileUploader,
-        private LemmyApiFactory $lemmyApi,
+        private FileUploader           $fileUploader,
+        private CommunityGroupManager  $groupManager,
     ) {
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws InvalidArgumentException
+     */
     public function migrate(): void
     {
         $this->cache->deleteItem('migration_v2_succeeded');
@@ -43,6 +52,41 @@ final readonly class DatabaseMigrator
             return;
         }
 
+        $this->migrateJobs();
+        $this->migrateGroups();
+
+        $cacheItem->set(true);
+        $this->cache->save($cacheItem);
+    }
+
+    private function migrateGroups(): void
+    {
+        /** @var array<string> $toDelete */
+        $toDelete = [];
+        foreach ($this->extractUserIds('@community_groups_(?<user>.+?)_(?<instance>.+)@') as $userId) {
+            $groups = $this->groupManager->getGroupsForUser($userId);
+            foreach ($groups as $group) {
+                $entity = (new CommunityGroup())
+                    ->setUserId($userId)
+                    ->setName($group->name)
+                    ->setCommunityIds(array_map(static fn (Community $community) => $community->id, [...$group->communities]))
+                ;
+                $this->entityManager->persist($entity);
+                $toDelete[] = $group->name;
+            }
+        }
+
+        $this->entityManager->flush();
+        foreach ($toDelete as $item) {
+            $this->groupManager->deleteGroup($item);
+        }
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    private function migrateJobs(): void
+    {
         /** @var array<Uuid> $jobsToDelete */
         $jobsToDelete = [];
 
@@ -57,9 +101,6 @@ final readonly class DatabaseMigrator
         foreach ($jobsToDelete as $job) {
             $this->jobManager->cancelJob($job);
         }
-
-        $cacheItem->set(true);
-        $this->cache->save($cacheItem);
     }
 
     public function migrateJob(string $userId, object $job, array &$jobsToDelete = []): ?object
@@ -147,8 +188,23 @@ final readonly class DatabaseMigrator
 
     /**
      * @return iterable<string, Envelope>
+     * @throws ReflectionException
      */
     private function listJobs(): iterable
+    {
+        foreach ($this->extractUserIds('@job_list_(?<user>.+?)___(?<instance>.+)@') as $userId) {
+            foreach ($this->jobManager->listJobsForUser($userId) as $job) {
+                yield $userId => $job;
+            }
+        }
+    }
+
+    /**
+     * @param string $regex
+     * @return iterable<string, mixed>
+     * @throws ReflectionException
+     */
+    private function extractUserIds(#[Language('RegExp')] string $regex): iterable
     {
         $cache = $this->cache;
         while ($cache instanceof TraceableAdapter) {
@@ -163,19 +219,11 @@ final readonly class DatabaseMigrator
             $files = $scanHashDir->invoke($cache, $directory->getValue($cache));
             foreach ($files as $file) {
                 $key = $getFileKey->invoke($cache, $file);
-                if (!fnmatch('job_list_*', $key)) {
-                    continue;
-                }
-
-                $regex = '@job_list_(?<user>.+?)___(?<instance>.+)@';
                 if (!preg_match($regex, $key, $matches)) {
                     continue;
                 }
                 $userId = $matches['user'] . '@' . $matches['instance'];
-
-                foreach ($this->jobManager->listJobsForUser($userId) as $job) {
-                    yield $userId => $job;
-                }
+                yield $userId;
             }
         } else {
             throw new LogicException('Unsupported cache type, cannot automatically migrate, please contact the developer with this message and include the following: ' . $cache::class);

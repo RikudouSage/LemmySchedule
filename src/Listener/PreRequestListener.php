@@ -3,6 +3,8 @@
 namespace App\Listener;
 
 use App\Service\DatabaseMigrator;
+use Psr\Cache\InvalidArgumentException;
+use ReflectionException;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -15,6 +17,10 @@ final readonly class PreRequestListener
     ) {
     }
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws ReflectionException
+     */
     public function onRequest(ControllerArgumentsEvent $event): void
     {
         $this->databaseMigrator->migrate();

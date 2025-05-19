@@ -7,6 +7,7 @@ use App\Repository\PostPinUnpinStoredJobRepository;
 use Doctrine\ORM\Mapping as ORM;
 use App\Enum\PinType;
 
+#[ORM\Index(fields: ['userId'])]
 #[ORM\Entity(repositoryClass: PostPinUnpinStoredJobRepository::class)]
 class PostPinUnpinStoredJob
 {

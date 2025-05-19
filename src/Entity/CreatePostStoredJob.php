@@ -10,6 +10,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Rikudou\LemmyApi\Enum\Language;
 
+#[ORM\Index(fields: ['userId'])]
 #[ORM\Entity(repositoryClass: CreatePostStoredJobRepository::class)]
 class CreatePostStoredJob
 {
