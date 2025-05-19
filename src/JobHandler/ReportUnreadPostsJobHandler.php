@@ -21,8 +21,6 @@ final readonly class ReportUnreadPostsJobHandler
     public function __construct(
         private LemmyApiFactory        $apiFactory,
         private CurrentUserService     $currentUserService,
-        string                         $botJwt,
-        string                         $botInstance,
         private DatabaseMigrator       $databaseMigrator,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface    $messageBus,

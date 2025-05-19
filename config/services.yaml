@@ -67,7 +67,7 @@ services:
             $allowAnonymous: '%app.file_provider.catbox.allow_anonymous%'
             $userHash: '%app.file_provider.catbox.user_hash%'
 
-    App\JobHandler\ReportUnreadPostsJobHandler:
+    App\JobHandler\ReportUnreadPostsJobV2Handler:
         arguments:
             $botInstance: '%app.unread_posts.bot_instance%'
             $botJwt: '%app.unread_posts.bot_jwt%'
