@@ -2,9 +2,11 @@
 
 namespace App\Job;
 
+use JetBrains\PhpStorm\Deprecated;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Rikudou\LemmyApi\Response\Model\Person;
 
+#[Deprecated]
 final readonly class ReportUnreadPostsJob
 {
     public function __construct(

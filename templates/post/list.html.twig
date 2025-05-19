@@ -158,18 +158,20 @@
                                 errorDeletingText: "There was an error when cancelling the job." | trans,
                             }) }}>
                                 <td>
-                                    {% if job.user %}
-                                        <a href="{{ job.userUrl }}" target="_blank">{{ job.user }}</a>
+                                    {% if job.personId %}
+                                        {% set personObj = person(job.personId) %}
+                                        <a href="{{ personObj | person_url }}" target="_blank">{{ personObj | person_name }}</a>
                                     {% endif %}
-                                    {% if job.user and job.community %}
+                                    {% if job.personId and job.communityId %}
                                         {{ "at" | trans }}
                                     {% endif %}
-                                    {% if job.community %}
-                                        <a href="{{ job.communityUrl }}" target="_blank">{{ job.community }}</a>
+                                    {% if job.communityId %}
+                                        {% set communityObj = community(job.communityId) %}
+                                        <a href="{{ community(job.communityId) | community_url }}" target="_blank">{{ communityObj | community_name }}</a>
                                     {% endif %}
                                 </td>
-                                <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
-                                <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
+                                <td>{{ job.scheduleExpression ? 'Yes' | trans : "No" | trans }}</td>
+                                <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
                                 <td>
                                     <button class="btn btn-danger"
                                             type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>

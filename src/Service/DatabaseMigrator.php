@@ -4,9 +4,11 @@ namespace App\Service;
 
 use App\Entity\CreatePostStoredJob;
 use App\Entity\PostPinUnpinStoredJob;
+use App\Entity\UnreadPostReportStoredJob;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJobV2;
+use App\Job\ReportUnreadPostsJob;
 use App\JobStamp\MetadataStamp;
 use App\Lemmy\LemmyApiFactory;
 use DateTimeImmutable;
@@ -33,6 +35,7 @@ final readonly class DatabaseMigrator
 
     public function migrate(): void
     {
+        $this->cache->deleteItem('migration_v2_succeeded');
         $cacheItem = $this->cache->getItem('migration_v2_succeeded');
         if ($cacheItem->isHit()) {
             return;
@@ -116,6 +119,18 @@ final readonly class DatabaseMigrator
                 ->setInstance($object->instance)
                 ->setScheduledAt(DateTimeImmutable::createFromInterface($expiresAt))
                 ->setPinType($object->pin)
+                ->setUserId($userId)
+            ;
+            $this->entityManager->persist($entity);
+        } else if ($object instanceof ReportUnreadPostsJob) {
+            $entity = (new UnreadPostReportStoredJob())
+                ->setJwt($object->jwt)
+                ->setInstance($object->instance)
+                ->setCommunityId($object->community?->id)
+                ->setPersonId($object->person?->id)
+                ->setScheduleExpression($object->scheduleExpression)
+                ->setScheduleTimezone($object->scheduleTimezone)
+                ->setScheduledAt(DateTimeImmutable::createFromInterface($expiresAt))
                 ->setUserId($userId)
             ;
             $this->entityManager->persist($entity);

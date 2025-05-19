@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Authentication\User;
 use App\Entity\CreatePostStoredJob;
 use App\Entity\PostPinUnpinStoredJob;
+use App\Entity\UnreadPostReportStoredJob;
 use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
@@ -15,6 +16,7 @@ use App\Job\CreatePostJobV2;
 use App\Job\DeleteFileJobV2;
 use App\Job\PinUnpinPostJobV3;
 use App\Job\ReportUnreadPostsJob;
+use App\Job\ReportUnreadPostsJobV2;
 use App\Lemmy\LemmyApiFactory;
 use App\Repository\CreatePostStoredJobRepository;
 use App\Repository\PostPinUnpinStoredJobRepository;
@@ -407,7 +409,8 @@ final class PostController extends AbstractController
         Request $request,
         LemmyApiFactory $apiFactory,
         TranslatorInterface $translator,
-        JobManager $jobManager,
+        JobScheduler $jobScheduler,
+        EntityManagerInterface $entityManager,
         CurrentUserService $currentUserService,
         ScheduleExpressionParser $scheduleExpressionParser,
         bool $unreadPostsEnabled,
@@ -508,29 +511,32 @@ final class PostController extends AbstractController
         }
         if (count($communities)) {
             foreach ($communities as $community) {
-                $jobManager->createJob(
-                    new ReportUnreadPostsJob(
-                        jwt: $user->getJwt(),
-                        instance: $user->getInstance(),
-                        community: $community,
-                        person: $person,
-                        scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
-                        scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
-                    ),
-                    $dateTime,
-                );
+                $entity = (new UnreadPostReportStoredJob())
+                    ->setJwt($user->getJwt())
+                    ->setInstance($user->getInstance())
+                    ->setCommunityId($community->id)
+                    ->setPersonId($person?->id)
+                    ->setScheduleExpression($data['recurring'] ? $data['scheduler']['expression'] : null)
+                    ->setScheduleTimezone($data['recurring'] ? $data['scheduler']['timezone'] : null)
+                    ->setUserId($user->getUserIdentifier())
+                    ->setScheduledAt($dateTime)
+                ;
+                $entityManager->persist($entity);
+                $jobScheduler->schedule(new ReportUnreadPostsJobV2($entity->getId()), $dateTime);
             }
+            $entityManager->flush();
         } else {
-            $jobManager->createJob(
-                new ReportUnreadPostsJob(
-                    jwt: $user->getJwt(),
-                    instance: $user->getInstance(),
-                    person: $person,
-                    scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
-                    scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
-                ),
-                $dateTime,
-            );
+            $entity = (new UnreadPostReportStoredJob())
+                ->setJwt($user->getJwt())
+                ->setInstance($user->getInstance())
+                ->setPersonId($person?->id)
+                ->setScheduleExpression($data['recurring'] ? $data['scheduler']['expression'] : null)
+                ->setScheduleTimezone($data['recurring'] ? $data['scheduler']['timezone'] : null)
+                ->setUserId($user->getUserIdentifier())
+                ->setScheduledAt($dateTime)
+            ;
+            $entityManager->persist($entity);
+            $jobScheduler->schedule(new ReportUnreadPostsJobV2($entity->getId()), $dateTime);
         }
 
         $this->addFlash('success', $translator->trans('Post reports have been successfully scheduled.'));

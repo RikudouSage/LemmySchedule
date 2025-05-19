@@ -15,6 +15,7 @@ use ReflectionClass;
 use ReflectionEnum;
 use Rikudou\LemmyApi\LemmyApi;
 use Rikudou\LemmyApi\Response\Model\Community;
+use Rikudou\LemmyApi\Response\Model\Person;
 use Rikudou\LemmyApi\Response\Model\Post;
 use Rikudou\LemmyApi\Response\View\CommunityView;
 use RuntimeException;
@@ -42,8 +43,11 @@ final class TwigExtension extends AbstractExtension
             new TwigFilter('format_date_time', $this->formatDate(...)),
             new TwigFilter('timezone_offset', $this->getTimezoneOffset(...)),
             new TwigFilter('community_name', $this->getCommunityName(...)),
+            new TwigFilter('person_name', $this->getPersonName(...)),
             new TwigFilter('class_name', $this->getClassName(...)),
             new TwigFilter('post_url', $this->getPostUrl(...)),
+            new TwigFilter('person_url', $this->getPersonUrl(...)),
+            new TwigFilter('community_url', $this->getCommunityUrl(...)),
         ];
     }
 
@@ -60,6 +64,7 @@ final class TwigExtension extends AbstractExtension
             new TwigFunction('enum', $this->getEnum(...)),
             new TwigFunction('community', $this->getCommunity(...)),
             new TwigFunction('post', $this->getPost(...)),
+            new TwigFunction('person', $this->getPerson(...)),
         ];
     }
 
@@ -124,11 +129,23 @@ final class TwigExtension extends AbstractExtension
         return $this->getApi()->post()->get($id)->post;
     }
 
+    private function getPerson(int $id): Person
+    {
+        return $this->getApi()->user()->get($id);
+    }
+
     private function getCommunityName(Community $community): string
     {
         $host = parse_url($community->actorId, PHP_URL_HOST);
 
         return "!{$community->name}@{$host}";
+    }
+
+    private function getPersonName(Person $person): string
+    {
+        $host = parse_url($person->actorId, PHP_URL_HOST);
+
+        return "@{$person->name}@{$host}";
     }
 
     private function getClassName(object $object): string
@@ -140,6 +157,32 @@ final class TwigExtension extends AbstractExtension
     {
         $instance = $this->currentUserService->getCurrentUser()?->getInstance() ?? $this->defaultInstance;
         return "https://{$instance}/post/{$post->id}";
+    }
+
+    private function getPersonUrl(Person $person): string
+    {
+        $instance = $this->currentUserService->getCurrentUser()?->getInstance() ?? $this->defaultInstance;
+        $personInstance = parse_url($person->actorId, PHP_URL_HOST);
+
+        $result = "https://{$instance}/u/{$person->name}";
+        if ($personInstance !== $instance) {
+            $result .= "@{$personInstance}";
+        }
+
+        return $result;
+    }
+
+    private function getCommunityUrl(Community $community): string
+    {
+        $instance = $this->currentUserService->getCurrentUser()?->getInstance() ?? $this->defaultInstance;
+        $communityInstance = parse_url($community->actorId, PHP_URL_HOST);
+
+        $result = "https://{$instance}/c/{$community->name}";
+        if ($communityInstance !== $instance) {
+            $result .= "@{$communityInstance}";
+        }
+
+        return $result;
     }
 
     private function getApi(): LemmyApi
