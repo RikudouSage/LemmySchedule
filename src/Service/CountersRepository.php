@@ -3,10 +3,12 @@
 namespace App\Service;
 
 use App\Dto\CounterConfiguration;
+use JetBrains\PhpStorm\Deprecated;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
+#[Deprecated]
 final readonly class CountersRepository
 {
     public function __construct(
@@ -20,7 +22,17 @@ final readonly class CountersRepository
      */
     public function getCounters(): array
     {
-        $cacheItem = $this->getListItem();
+        return $this->getCountersForUser(
+            $this->currentUserService->getCurrentUser()->getUserIdentifier(),
+        );
+    }
+
+    /**
+     * @return array<CounterConfiguration>
+     */
+    public function getCountersForUser(string $userId): array
+    {
+        $cacheItem = $this->getListItem($userId);
         if (!$cacheItem->isHit()) {
             return [];
         }
@@ -31,9 +43,11 @@ final readonly class CountersRepository
         ));
     }
 
-    public function findByName(string $name): ?CounterConfiguration
+    public function findByName(string $name, ?string $userId = null): ?CounterConfiguration
     {
-        $key = $this->getItemKey($name);
+        $userId ??= $this->currentUserService->getCurrentUser()->getUserIdentifier();
+
+        $key = $this->getItemKey($name, $userId);
         $item = $this->cache->getItem($key);
         if (!$item->isHit()) {
             return null;
@@ -42,12 +56,14 @@ final readonly class CountersRepository
         return $item->get();
     }
 
-    public function store(CounterConfiguration $counterConfiguration): void
+    public function store(CounterConfiguration $counterConfiguration, ?string $userId = null): void
     {
-        $item = $this->cache->getItem($this->getItemKey($counterConfiguration));
+        $userId ??= $this->currentUserService->getCurrentUser()->getUserIdentifier();
+
+        $item = $this->cache->getItem($this->getItemKey($counterConfiguration, $userId));
         $item->set($counterConfiguration);
 
-        $listItem = $this->getListItem();
+        $listItem = $this->getListItem($userId);
         $list = $listItem->get() ?? [];
         $list = $this->cleanupList($list);
         $list[] = $counterConfiguration->name;
@@ -59,11 +75,13 @@ final readonly class CountersRepository
         $this->cache->save($listItem);
     }
 
-    public function delete(CounterConfiguration|string $counterConfiguration): void
+    public function delete(CounterConfiguration|string $counterConfiguration, ?string $userId = null): void
     {
-        $this->cache->deleteItem($this->getItemKey($counterConfiguration));
+        $userId ??= $this->currentUserService->getCurrentUser()->getUserIdentifier();
 
-        $listItem = $this->getListItem();
+        $this->cache->deleteItem($this->getItemKey($counterConfiguration, $userId));
+
+        $listItem = $this->getListItem($userId);
         $list = $listItem->get() ?? [];
         $list = $this->cleanupList($list);
         $listItem->set($list);
@@ -71,13 +89,13 @@ final readonly class CountersRepository
         $this->cache->save($listItem);
     }
 
-    private function getItemKey(CounterConfiguration|string $configuration): string
+    private function getItemKey(CounterConfiguration|string $configuration, string $userId): string
     {
         if (!is_string($configuration)) {
             $configuration = $configuration->name;
         }
 
-        return $this->normalizeKey("counter.{$this->currentUserService->getCurrentUser()->getUserIdentifier()}.{$configuration}");
+        return $this->normalizeKey("counter.{$userId}.{$configuration}");
     }
 
     private function normalizeKey(string $key): string
@@ -91,9 +109,9 @@ final readonly class CountersRepository
         );
     }
 
-    private function getListItem(): CacheItemInterface
+    private function getListItem(string $userId): CacheItemInterface
     {
-        $listKey = $this->normalizeKey("counter.{$this->currentUserService->getCurrentUser()->getUserIdentifier()}");
+        $listKey = $this->normalizeKey("counter.{$userId}");
 
         return $this->cache->getItem($listKey);
     }

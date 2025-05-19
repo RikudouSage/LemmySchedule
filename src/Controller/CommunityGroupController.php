@@ -90,7 +90,7 @@ final class CommunityGroupController extends AbstractController
         $entity = (new CommunityGroup())
             ->setName($data['title'])
             ->setCommunityIds(array_map(
-                fn (Community $community) => $community->id,
+                static fn (Community $community) => $community->id,
                 $communities,
             ))
             ->setUserId($this->getUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'))

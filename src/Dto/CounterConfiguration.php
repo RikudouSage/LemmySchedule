@@ -2,6 +2,9 @@
 
 namespace App\Dto;
 
+use JetBrains\PhpStorm\Deprecated;
+
+#[Deprecated]
 final readonly class CounterConfiguration
 {
     public function __construct(

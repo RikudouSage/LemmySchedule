@@ -2,22 +2,22 @@
 
 namespace App\Repository;
 
-use App\Entity\CommunityGroup;
+use App\Entity\Counter;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<CommunityGroup>
+ * @extends ServiceEntityRepository<Counter>
  */
-class CommunityGroupRepository extends ServiceEntityRepository
+class CounterRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, CommunityGroup::class);
+        parent::__construct($registry, Counter::class);
     }
 
     //    /**
-    //     * @return CommunityGroup[] Returns an array of CommunityGroup objects
+    //     * @return Counter[] Returns an array of Counter objects
     //     */
     //    public function findByExampleField($value): array
     //    {
@@ -31,7 +31,7 @@ class CommunityGroupRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?CommunityGroup
+    //    public function findOneBySomeField($value): ?Counter
     //    {
     //        return $this->createQueryBuilder('c')
     //            ->andWhere('c.exampleField = :val')

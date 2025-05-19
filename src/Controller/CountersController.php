@@ -2,8 +2,11 @@
 
 namespace App\Controller;
 
-use App\Dto\CounterConfiguration;
-use App\Service\CountersRepository;
+use App\Entity\Counter;
+use App\Repository\CounterRepository;
+use App\Service\CountersRepository as CountersRepositoryOld;
+use Doctrine\ORM\EntityManagerInterface;
+use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,23 +18,26 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final class CountersController extends AbstractController
 {
     #[Route('/list', name: 'app.counters.list', methods: [Request::METHOD_GET])]
-    public function list(CountersRepository $countersRepository): Response
+    public function list(CounterRepository $countersRepository): Response
     {
         return $this->render('post/counter-list.html.twig', [
-            'counters' => $countersRepository->getCounters(),
+            'counters' => $countersRepository->findBy([
+                'userId' => $this->getUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'),
+            ]),
         ]);
     }
 
     #[Route('/add', name: 'app.counters.add', methods: [Request::METHOD_GET, Request::METHOD_POST])]
-    #[Route('/edit/{name}', name: 'app.counters.edit', methods: [Request::METHOD_GET, Request::METHOD_POST])]
+    #[Route('/edit/{id}', name: 'app.counters.edit', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function edit(
-        CountersRepository $countersRepository,
+        CounterRepository $countersRepository,
         Request $request,
         TranslatorInterface $translator,
-        ?string $name = null
+        EntityManagerInterface $entityManager,
+        ?int $id = null
     ): Response {
-        $isNew = $name === null;
-        $counter = $isNew ? null : $countersRepository->findByName($name);
+        $isNew = $id === null;
+        $counter = $isNew ? null : $countersRepository->find($id);
         if (!$isNew && $counter === null) {
             throw $this->createNotFoundException();
         }
@@ -56,12 +62,12 @@ final class CountersController extends AbstractController
 
                 return $response();
             }
-            if ($counter && $counter->name !== $name) {
+            if ($counter && $counter->getName() !== $name) {
                 $this->addFlash('error', $translator->trans('Cannot change the name of the counter.'));
 
                 return $response();
             }
-            if ($isNew && $countersRepository->findByName($name)) {
+            if ($isNew && $countersRepository->findOneBy(['name' => $name])) {
                 $this->addFlash('error', $translator->trans('Counter with the same name already exists.'));
 
                 return $response();
@@ -72,27 +78,31 @@ final class CountersController extends AbstractController
                 return $response();
             }
 
-            $counter = new CounterConfiguration(
-                name: $name,
-                value: $value,
-                incrementBy: $incrementBy,
-            );
-
-            $countersRepository->store($counter);
+            $counter ??= (new Counter())->setName($name);
+            $counter
+                ->setValue($value)
+                ->setIncrementBy($incrementBy)
+                ->setUserId($this->getUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'))
+            ;
+            $entityManager->persist($counter);
+            $entityManager->flush();
             $this->addFlash('success', $isNew ? $translator->trans('Counter has been added.') : $translator->trans('Counter has been updated.'));
 
             return $this->redirectToRoute('app.counters.edit', [
-                'name' => $name,
+                'id' => $counter->getId(),
             ]);
         }
 
         return $response(false);
     }
 
-    #[Route('/delete/{name}', name: 'app.counters.delete', methods: [Request::METHOD_GET])]
-    public function delete(string $name, CountersRepository $repository): RedirectResponse
+    #[Route('/delete/{id}', name: 'app.counters.delete', methods: [Request::METHOD_GET])]
+    public function delete(int $id, CounterRepository $repository, EntityManagerInterface $entityManager): RedirectResponse
     {
-        $repository->delete($name);
+        if ($entity = $repository->find($id)) {
+            $entityManager->remove($entity);
+            $entityManager->flush();
+        }
 
         return $this->redirectToRoute('app.counters.list');
     }

@@ -2,7 +2,9 @@
 
 namespace App\Service;
 
+use App\Dto\CounterConfiguration;
 use App\Entity\CommunityGroup;
+use App\Entity\Counter;
 use App\Entity\CreatePostStoredJob;
 use App\Entity\PostPinUnpinStoredJob;
 use App\Entity\UnreadPostReportStoredJob;
@@ -11,7 +13,7 @@ use App\Job\CreatePostJob;
 use App\Job\PinUnpinPostJobV2;
 use App\Job\ReportUnreadPostsJob;
 use App\JobStamp\MetadataStamp;
-use App\Lemmy\LemmyApiFactory;
+use App\Service\CountersRepository as OldCountersRepository;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,11 +34,12 @@ use Symfony\Component\Uid\Uuid;
 final readonly class DatabaseMigrator
 {
     public function __construct(
-        private JobManager             $jobManager,
+        private JobManager $jobManager,
         private CacheItemPoolInterface $cache,
         private EntityManagerInterface $entityManager,
-        private FileUploader           $fileUploader,
-        private CommunityGroupManager  $groupManager,
+        private FileUploader $fileUploader,
+        private CommunityGroupManager $groupManager,
+        private OldCountersRepository $countersRepository,
     ) {
     }
 
@@ -54,6 +57,7 @@ final readonly class DatabaseMigrator
 
         $this->migrateJobs();
         $this->migrateGroups();
+        $this->migrateCounters();
 
         $cacheItem->set(true);
         $this->cache->save($cacheItem);
@@ -79,6 +83,38 @@ final readonly class DatabaseMigrator
         $this->entityManager->flush();
         foreach ($toDelete as $item) {
             $this->groupManager->deleteGroup($item);
+        }
+    }
+
+    private function migrateCounters(): void
+    {
+        /** @var array<string, array<CounterConfiguration>> $toDelete */
+        $toDelete = [];
+        foreach ($this->extractUserIds('@counter.(?<user>.+?)___(?<instance>.+)@') as $cacheKey => $userId) {
+            $cacheItem = $this->cache->getItem($cacheKey);
+            if ($cacheItem->isHit() && $cacheItem->get() instanceof CounterConfiguration) {
+                continue;
+            }
+
+            foreach ($this->countersRepository->getCountersForUser($userId) as $counter) {
+                $entity = (new Counter())
+                    ->setUserId($userId)
+                    ->setName($counter->name)
+                    ->setValue($counter->value)
+                    ->setIncrementBy($counter->incrementBy)
+                ;
+                $this->entityManager->persist($entity);
+
+                $toDelete[$userId] ??= [];
+                $toDelete[$userId][] = $counter;
+            }
+        }
+
+        $this->entityManager->flush();
+        foreach ($toDelete as $userId => $counters) {
+            foreach ($counters as $counter) {
+                $this->countersRepository->delete($counter, $userId);
+            }
         }
     }
 
@@ -187,8 +223,9 @@ final readonly class DatabaseMigrator
     }
 
     /**
-     * @return iterable<string, Envelope>
      * @throws ReflectionException
+     *
+     * @return iterable<string, Envelope>
      */
     private function listJobs(): iterable
     {
@@ -200,9 +237,9 @@ final readonly class DatabaseMigrator
     }
 
     /**
-     * @param string $regex
-     * @return iterable<string, mixed>
      * @throws ReflectionException
+     *
+     * @return iterable<string, mixed>
      */
     private function extractUserIds(#[Language('RegExp')] string $regex): iterable
     {
@@ -223,7 +260,8 @@ final readonly class DatabaseMigrator
                     continue;
                 }
                 $userId = $matches['user'] . '@' . $matches['instance'];
-                yield $userId;
+
+                yield $key => $userId;
             }
         } else {
             throw new LogicException('Unsupported cache type, cannot automatically migrate, please contact the developer with this message and include the following: ' . $cache::class);
