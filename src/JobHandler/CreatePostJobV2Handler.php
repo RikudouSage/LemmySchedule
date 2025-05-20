@@ -3,7 +3,7 @@
 namespace App\JobHandler;
 
 use App\Authentication\User;
-use App\Dto\CounterConfiguration;
+use App\Entity\Counter;
 use App\Entity\CreatePostStoredJob;
 use App\Entity\PostPinUnpinStoredJob;
 use App\Enum\PinType;
@@ -11,8 +11,8 @@ use App\FileProvider\FileProvider;
 use App\Job\CreatePostJobV2;
 use App\Job\PinUnpinPostJobV3;
 use App\Lemmy\LemmyApiFactory;
+use App\Repository\CounterRepository;
 use App\Repository\CreatePostStoredJobRepository;
-use App\Service\CountersRepository;
 use App\Service\CurrentUserService;
 use App\Service\JobScheduler;
 use App\Service\ScheduleExpressionParser;
@@ -41,7 +41,7 @@ final readonly class CreatePostJobV2Handler
         #[TaggedIterator('app.file_provider')]
         private iterable $fileProviders,
         private TitleExpressionReplacer $expressionReplacer,
-        private CountersRepository $countersRepository,
+        private CounterRepository $countersRepository,
         private CreatePostStoredJobRepository $jobRepository,
         private JobScheduler $jobScheduler,
         private EntityManagerInterface $entityManager,
@@ -197,10 +197,10 @@ final readonly class CreatePostJobV2Handler
         return false;
     }
 
-    private function handleCounters(CreatePostJobV2 $job): void
+    private function handleCounters(CreatePostStoredJob $job): void
     {
         $regex = '@#\[Counter\([\'"]([^\'"]+)[\'"]\)]#@';
-        $result = $this->expressionReplacer->parse($job->title);
+        $result = $this->expressionReplacer->parse($job->getTitle());
         $counters = [];
         foreach ($result->validExpressions as $expression) {
             if (!preg_match($regex, $expression, $matches)) {
@@ -211,10 +211,16 @@ final readonly class CreatePostJobV2Handler
         }
 
         foreach ($counters as $counterName) {
-            $counter = $this->countersRepository->findByName($counterName);
-            $counter ??= new CounterConfiguration(name: $counterName, value: 0, incrementBy: 1);
-            $counter = new CounterConfiguration(name: $counterName, value: $counter->value + $counter->incrementBy, incrementBy: $counter->incrementBy);
-            $this->countersRepository->store($counter);
+            $counter = $this->countersRepository->findOneBy(['name' => $counterName, 'userId' => $job->getUserId()]);
+            $counter ??= (new Counter())
+                ->setName($counterName)
+                ->setValue(0)
+                ->setIncrementBy(1)
+                ->setUserId($job->getUserId())
+            ;
+            $counter->setValue($counter->getValue() + $counter->getIncrementBy());
+            $this->entityManager->persist($counter);
         }
+        $this->entityManager->flush();
     }
 }

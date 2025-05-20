@@ -16,7 +16,7 @@ class Counter
     private ?string $name = null;
 
     #[ORM\Column]
-    private ?int $value = null;
+    private int $value = 0;
 
     #[ORM\Column]
     private int $incrementBy = 1;
@@ -36,7 +36,7 @@ class Counter
         return $this;
     }
 
-    public function getValue(): ?int
+    public function getValue(): int
     {
         return $this->value;
     }
