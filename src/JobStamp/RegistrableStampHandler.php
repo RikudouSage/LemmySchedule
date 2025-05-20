@@ -5,11 +5,13 @@ namespace App\JobStamp;
 use App\Service\JobManager;
 use DateInterval;
 use DateTimeImmutable;
+use JetBrains\PhpStorm\Deprecated;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Middleware\MiddlewareInterface;
 use Symfony\Component\Messenger\Middleware\StackInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 
+#[Deprecated]
 final readonly class RegistrableStampHandler implements MiddlewareInterface
 {
     public function __construct(
