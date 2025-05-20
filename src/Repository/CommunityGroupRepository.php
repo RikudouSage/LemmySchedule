@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\CommunityGroup;
+use App\Service\CurrentUserService;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -11,33 +12,40 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class CommunityGroupRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+        private readonly CurrentUserService $currentUserService,
+    ) {
         parent::__construct($registry, CommunityGroup::class);
     }
 
-    //    /**
-    //     * @return CommunityGroup[] Returns an array of CommunityGroup objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * @return array<CommunityGroup>
+     */
+    public function findForCurrentUser(): array
+    {
+        $user = $this->currentUserService->getCurrentUser();
+        if ($user === null) {
+            return [];
+        }
 
-    //    public function findOneBySomeField($value): ?CommunityGroup
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        return $this->findBy([
+            'userId' => $user->getUserIdentifier(),
+        ], [
+            'name' => 'ASC',
+        ]);
+    }
+
+    public function findByNameForCurrentUser(string $name): ?CommunityGroup
+    {
+        $user = $this->currentUserService->getCurrentUser();
+        if ($user === null) {
+            return null;
+        }
+
+        return $this->findOneBy([
+            'name' => $name,
+            'userId' => $user->getUserIdentifier(),
+        ]);
+    }
 }

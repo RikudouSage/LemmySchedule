@@ -17,10 +17,10 @@ use App\Job\DeleteFileJobV2;
 use App\Job\PinUnpinPostJobV3;
 use App\Job\ReportUnreadPostsJobV2;
 use App\Lemmy\LemmyApiFactory;
+use App\Repository\CommunityGroupRepository;
 use App\Repository\CreatePostStoredJobRepository;
 use App\Repository\PostPinUnpinStoredJobRepository;
 use App\Repository\UnreadPostReportStoredJobRepository;
-use App\Service\CommunityGroupManager;
 use App\Service\CurrentUserService;
 use App\Service\JobScheduler;
 use App\Service\ScheduleExpressionParser;
@@ -132,9 +132,9 @@ final class PostController extends AbstractController
         iterable $fileProviders,
         #[Autowire('%app.default_post_language%')]
         int $defaultLanguage,
-        CommunityGroupManager $groupManager,
         #[Autowire('%app.default_communities%')]
         array $defaultCommunities,
+        CommunityGroupRepository $groupRepository,
     ): Response {
         $fileProviders = [...$fileProviders];
         $default = (array_values(array_filter($fileProviders, static fn (FileProvider $fileProvider) => $fileProvider->isDefault()))[0] ?? null)?->getId();
@@ -154,7 +154,7 @@ final class PostController extends AbstractController
             'selectedLanguage' => Language::tryFrom($defaultLanguage) ?? Language::Undetermined,
             'fileProviders' => [...$fileProviders],
             'defaultFileProvider' => $default,
-            'groups' => [...$groupManager->getGroups()],
+            'groups' => $groupRepository->findForCurrentUser(),
         ]);
     }
 
@@ -168,11 +168,11 @@ final class PostController extends AbstractController
         ScheduleExpressionParser $scheduleExpressionParser,
         #[TaggedIterator('app.file_provider')]
         iterable $fileProviders,
-        CommunityGroupManager $groupManager,
         #[Autowire('%app.default_post_language%')]
         int $defaultLanguage,
         EntityManagerInterface $entityManager,
         JobScheduler $jobScheduler,
+        CommunityGroupRepository $groupRepository,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -216,7 +216,7 @@ final class PostController extends AbstractController
             ...$data,
             'communities' => $this->getCommunities(),
             'languages' => Language::cases(),
-            'groups' => [...$groupManager->getGroups()],
+            'groups' => $groupRepository->findForCurrentUser(),
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
 
         if ($image && $data['url']) {
@@ -257,16 +257,15 @@ final class PostController extends AbstractController
         foreach ($data['selectedCommunities'] as $key => $selectedCommunity) {
             if (str_starts_with($selectedCommunity, 'group***')) {
                 $name = substr($selectedCommunity, strlen('group***'));
-                $group = $groupManager->getGroup($name);
+                $group = $groupRepository->findByNameForCurrentUser($name);
                 if ($group === null) {
                     $this->addFlash('error', $translator->trans('Could not find group called "{group}"', ['{group}' => $group]));
 
                     return $errorResponse();
                 }
                 unset($data['selectedCommunities'][$key]);
-                $groupCommunities = $group->communities;
-                foreach ($groupCommunities as $groupCommunity) {
-                    $data['selectedCommunities'][] = $groupCommunity->id;
+                foreach ($group->getCommunityIds() as $groupCommunityId) {
+                    $data['selectedCommunities'][] = $groupCommunityId;
                 }
             }
         }
