@@ -34,8 +34,6 @@ final readonly class LemmyApiFactory
             $api->login($username, $password, $totpToken);
         } elseif ($jwt) {
             $api->setJwt($jwt);
-        } else {
-            throw new LogicException('Either username/password or jwt must be provided.');
         }
 
         return $api;

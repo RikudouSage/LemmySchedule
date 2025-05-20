@@ -4,15 +4,12 @@ namespace App\JobHandler;
 
 use App\InstanceList\LemmyverseInstanceListProvider;
 use App\Job\RefreshInstanceListJob;
-use App\JobStamp\CancellableStamp;
-use App\JobStamp\RegistrableStamp;
 use DateInterval;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsMessageHandler]
@@ -52,11 +49,8 @@ final readonly class RefreshInstanceListHandler
         $cacheItem->set($instanceNames);
         $this->cache->save($cacheItem);
 
-        $jobId = Uuid::v4();
         $this->messageBus->dispatch($job, [
             new DelayStamp(23 * 60 * 60 * 1_000),
-            new CancellableStamp(jobId: $jobId),
-            new RegistrableStamp(jobId: $jobId),
         ]);
     }
 }

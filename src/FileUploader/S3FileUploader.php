@@ -2,9 +2,12 @@
 
 namespace App\FileUploader;
 
+use App\Entity\StoredFile;
+use App\Repository\StoredFileRepository;
 use App\Service\ImageMetadataRemover;
 use App\Service\TemporaryFileCleaner;
 use AsyncAws\S3\S3Client;
+use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Uid\Uuid;
@@ -16,10 +19,12 @@ final readonly class S3FileUploader implements FileUploader
         private string $bucket,
         private TemporaryFileCleaner $fileCleaner,
         private ImageMetadataRemover $metadataRemover,
+        private StoredFileRepository $storedFileRepository,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
-    public function upload(File $file): Uuid
+    public function upload(File $file): StoredFile
     {
         $this->metadataRemover->stripMetadata($file);
         $uuid = Uuid::v4();
@@ -30,19 +35,40 @@ final readonly class S3FileUploader implements FileUploader
             'ContentType' => $file->getMimeType(),
         ]);
 
-        return $uuid;
+        return (new StoredFile())
+            ->setPath($uuid);
     }
 
-    public function delete(Uuid $fileId): void
+    public function delete(Uuid|int $fileId): void
     {
+        if (is_int($fileId)) {
+            $entity = $this->storedFileRepository->find($fileId);
+            if ($entity === null) {
+                return;
+            }
+
+            $fileId = $entity->getPath();
+            $this->entityManager->remove($entity);
+            $this->entityManager->flush();
+        }
+
         $this->s3client->deleteObject([
             'Bucket' => $this->bucket,
             'Key' => $fileId,
         ]);
     }
 
-    public function get(Uuid $fileId): File
+    public function get(Uuid|int $fileId): File
     {
+        if (is_int($fileId)) {
+            $entity = $this->storedFileRepository->find($fileId);
+            if ($entity === null) {
+                throw new RuntimeException("The file with ID '{$fileId}' does not exist");
+            }
+
+            $fileId = $entity->getPath();
+        }
+
         $result = $this->s3client->getObject([
             'Bucket' => $this->bucket,
             'Key' => $fileId,

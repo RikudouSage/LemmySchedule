@@ -12,6 +12,10 @@ jobs:
     env:
       DOMAIN_NAME: schedule.lemmings.world
       DOMAIN_ZONE: Z04564103VF7YTIMBHJE4
+      VPC_ID: ${{ secrets.VPC_ID }}
+      VPC_SUBNET_1: ${{ secrets.VPC_SUBNET_1 }}
+      VPC_SUBNET_2: ${{ secrets.VPC_SUBNET_2 }}
+      VPC_SUBNET_3: ${{ secrets.VPC_SUBNET_3 }}
       AWS_REGION: eu-central-1
       APP_ENV: prod
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

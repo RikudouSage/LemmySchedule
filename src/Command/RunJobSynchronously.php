@@ -45,6 +45,7 @@ final class RunJobSynchronously extends Command
         if (!is_array($job) || !isset($job['body'])) {
             throw new RuntimeException('Invalid job - must be an array with a body key');
         }
+        // todo remove RegistrableStamp on next major
         $job = $this->serializer->decode($job)->withoutStampsOfType(RegistrableStamp::class);
         $this->messageBus->dispatch($job, [
             new TransportNamesStamp(['sync']),

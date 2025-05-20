@@ -9,7 +9,7 @@ use Symfony\Component\Uid\Uuid;
 #[AutoconfigureTag('app.file_provider')]
 interface FileProvider
 {
-    public function getLink(Uuid $fileId, User $user): ?string;
+    public function getLink(Uuid|int $fileId, User $user): ?string;
 
     public function getDisplayName(): string;
 

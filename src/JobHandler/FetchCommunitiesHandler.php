@@ -9,7 +9,6 @@ use Rikudou\LemmyApi\Enum\ListingType;
 use Rikudou\LemmyApi\Enum\SortType;
 use Rikudou\LemmyApi\Exception\HttpApiException;
 use Rikudou\LemmyApi\LemmyApi;
-use Rikudou\LemmyApi\Response\View\CommentView;
 use Rikudou\LemmyApi\Response\View\CommunityView;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;

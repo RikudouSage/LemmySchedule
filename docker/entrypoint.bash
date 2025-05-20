@@ -4,6 +4,8 @@ cd /var/www/html || exit 1
 
 rm -rf var
 php bin/console cache:warmup
+php bin/console doctrine:database:create
+php bin/console doctrine:migrations:migrate -n
 
 /etc/init.d/supervisor start
 supervisorctl reread

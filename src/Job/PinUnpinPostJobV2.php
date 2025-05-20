@@ -3,7 +3,9 @@
 namespace App\Job;
 
 use App\Enum\PinType;
+use JetBrains\PhpStorm\Deprecated;
 
+#[Deprecated]
 final class PinUnpinPostJobV2
 {
     public function __construct(
