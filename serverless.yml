@@ -55,16 +55,22 @@ provider:
         ASSETS_URL: https://assets.${self:custom.Domain}
         NEW_VERSION_CHECK: ${env:NEW_VERSION_CHECK, '1'}
         CATBOX_USER_HASH: ${env:CATBOX_USER_HASH, ''}
+        APP_CACHE_DIR: ${self:custom.MountDirectory}
 
 plugins:
   - ./vendor/bref/bref
   - ./vendor/bref/extra-php-extensions
 
 custom:
+    MountDirectory: /mnt/database
     Domain: ${env:DOMAIN_NAME}
     DomainZone: ${env:DOMAIN_ZONE}
     ServiceToken: !Join [':', ['arn:aws:lambda', !Ref AWS::Region, !Ref AWS::AccountId, 'function:AcmCustomResources-prod-customResources']]
     CloudfrontHostedZone: Z2FDTNDATAQYW2
+    VpcId: ${env:VPC_ID}
+    VpcSubnet1Id: ${env:VPC_SUBNET_1}
+    VpcSubnet2Id: ${env:VPC_SUBNET_2}
+    VpcSubnet3Id: ${env:VPC_SUBNET_3}
 
 functions:
     # This function runs the Symfony website/API
@@ -74,6 +80,20 @@ functions:
         memorySize: 512
         environment:
             CONSOLE_FUNCTION: !GetAtt ConsoleLambdaFunction.Arn
+            # just to force a dependency
+            M1: !Ref EfsMount1
+            M2: !Ref EfsMount2
+            M3: !Ref EfsMount3
+        vpc:
+            securityGroupIds:
+                - !GetAtt SecurityGroupLambda.GroupId
+            subnetIds:
+                - ${self:custom.VpcSubnet1Id}
+                - ${self:custom.VpcSubnet2Id}
+                - ${self:custom.VpcSubnet3Id}
+        fileSystemConfig:
+            localMountPath: ${self:custom.MountDirectory}
+            arn: !GetAtt EfsAccessPoint.Arn
         layers:
             - ${bref:layer.php-83-fpm}
             - ${bref-extra:imagick-php-83}
@@ -86,6 +106,20 @@ functions:
         memorySize: 512
         environment:
             CONSOLE_FUNCTION: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-console
+            # just to force a dependency
+            M1: !Ref EfsMount1
+            M2: !Ref EfsMount2
+            M3: !Ref EfsMount3
+        vpc:
+            securityGroupIds:
+                - !GetAtt SecurityGroupLambda.GroupId
+            subnetIds:
+                - ${self:custom.VpcSubnet1Id}
+                - ${self:custom.VpcSubnet2Id}
+                - ${self:custom.VpcSubnet3Id}
+        fileSystemConfig:
+            localMountPath: ${self:custom.MountDirectory}
+            arn: !GetAtt EfsAccessPoint.Arn
         layers:
             - ${bref:layer.php-83} # PHP
             - ${bref-extra:imagick-php-83}
@@ -308,6 +342,82 @@ resources:
                                 Resource:
                                     - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-console
                                     - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-console:*
+
+        SecurityGroupLambda:
+            Type: AWS::EC2::SecurityGroup
+            Properties:
+                GroupDescription: Lemmy Schedule ${self:provider.stage}
+                VpcId: ${self:custom.VpcId}
+                Tags:
+                    - Key: Name
+                      Value: Lemmy Schedule ${self:provider.stage}
+        SecurityGroupEfs:
+            Type: AWS::EC2::SecurityGroup
+            Properties:
+                GroupDescription: Allows mounting the Lemmy Schedule ${self:provider.stage} EFS filesystem
+                SecurityGroupIngress:
+                    - SourceSecurityGroupId: !GetAtt SecurityGroupLambda.GroupId
+                      Description: Lemmy Schedule ${self:provider.stage} EFS
+                      FromPort: 2049
+                      IpProtocol: tcp
+                      ToPort: 2049
+                VpcId: ${self:custom.VpcId}
+                Tags:
+                    - Key: Name
+                      Value: EFS Lemmy Schedule ${self:provider.stage}
+
+        Efs:
+            Type: AWS::EFS::FileSystem
+            Properties:
+                Encrypted: true
+                FileSystemTags:
+                    - Key: Name
+                      Value: LemmySchedule storage
+                ThroughputMode: elastic
+                FileSystemPolicy:
+                    Version: "2012-10-17"
+                    Statement:
+                        - Effect: Allow
+                          Action:
+                              - elasticfilesystem:ClientMount
+                              - elasticfilesystem:ClientRootAccess
+                              - elasticfilesystem:ClientWrite
+                          Principal:
+                              Service: lambda.amazonaws.com
+        EfsAccessPoint:
+            Type: AWS::EFS::AccessPoint
+            Properties:
+                FileSystemId: !Ref Efs
+                PosixUser:
+                    Gid: 33
+                    Uid: 33
+                RootDirectory:
+                    CreationInfo:
+                        OwnerGid: 33
+                        OwnerUid: 33
+                        Permissions: '0777'
+                    Path: /database
+        EfsMount1:
+            Type: AWS::EFS::MountTarget
+            Properties:
+                FileSystemId: !Ref Efs
+                SecurityGroups:
+                    - !GetAtt SecurityGroupEfs.GroupId
+                SubnetId: ${self:custom.VpcSubnet1Id}
+        EfsMount2:
+            Type: AWS::EFS::MountTarget
+            Properties:
+                FileSystemId: !Ref Efs
+                SecurityGroups:
+                    - !GetAtt SecurityGroupEfs.GroupId
+                SubnetId: ${self:custom.VpcSubnet2Id}
+        EfsMount3:
+            Type: AWS::EFS::MountTarget
+            Properties:
+                FileSystemId: !Ref Efs
+                SecurityGroups:
+                    - !GetAtt SecurityGroupEfs.GroupId
+                SubnetId: ${self:custom.VpcSubnet3Id}
     Outputs:
         TestUrl:
             Value: https://${self:custom.Domain}
