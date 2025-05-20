@@ -2,14 +2,16 @@
 
 namespace App\InjectableExpression;
 
-use App\Service\CountersRepository;
+use App\Repository\CounterRepository;
+use App\Service\CurrentUserService;
 use RuntimeException;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 
 final readonly class CounterInjectableExpression implements InjectableExpression
 {
     public function __construct(
-        private CountersRepository $repository,
+        private CounterRepository $repository,
+        private CurrentUserService $currentUserService,
     ) {
     }
 
@@ -24,12 +26,17 @@ final readonly class CounterInjectableExpression implements InjectableExpression
             $this->getName(),
             static fn () => throw new RuntimeException('This function cannot be compiled'),
             function (array $arguments, string $counterName): string {
-                $counter = $this->repository->findByName($counterName);
+                $user = $this->currentUserService->getCurrentUser();
+                if ($user === null) {
+                    return '0';
+                }
+
+                $counter = $this->repository->findOneBy(['name' => $counterName, 'userId' => $user->getUserIdentifier()]);
                 if ($counter === null) {
                     return '0';
                 }
 
-                return $counter->value;
+                return (string) $counter->getValue();
             },
         );
     }

@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Counter;
 use App\Repository\CounterRepository;
-use App\Service\CountersRepository as CountersRepositoryOld;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
