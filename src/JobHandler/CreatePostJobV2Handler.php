@@ -128,7 +128,7 @@ final readonly class CreatePostJobV2Handler
                     timeZone: new DateTimeZone($job->getScheduleTimezone()),
                 );
 
-                $this->jobScheduler->schedule($job, $nextDate);
+                $this->jobScheduler->schedule($message, $nextDate);
 
                 $job->setScheduledAt(DateTimeImmutable::createFromInterface($nextDate));
                 $this->entityManager->persist($job);
