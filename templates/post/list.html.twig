@@ -29,18 +29,19 @@
                     {% for job in postCreateJobs %}
                         <tr {{ stimulus_controller('scheduled-job', {
                             cancelUrl: path('app.post.ajax.cancel', {
-                                jobId: job.jobId,
+                                type: job | class_name,
+                                jobId: job.id,
                             }),
                             errorDeletingText: "There was an error when cancelling the job." | trans,
                         }) }}>
                             <td>
-                                <a href="{{ path('app.post.detail', {jobId: job.jobId}) }}">
+                                <a href="{{ path('app.post.detail', {jobId: job.id}) }}">
                                     {{ job.title }}
                                 </a>
                             </td>
-                            <td>{{ job.community }}</td>
-                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
-                            <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
+                            <td>{{ community(job.communityId) | community_name }}</td>
+                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
+                            <td>{{ job.scheduleExpression ? 'Yes' | trans : "No" | trans }}</td>
                             <td>
                                 <button class="btn btn-danger"
                                         type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
@@ -85,25 +86,27 @@
                     {% for job in postPinJobs %}
                         <tr {{ stimulus_controller('scheduled-job', {
                             cancelUrl: path('app.post.ajax.cancel', {
-                                jobId: job.jobId,
+                                type: job | class_name,
+                                jobId: job.id,
                             }),
                             errorDeletingText: "There was an error when cancelling the job." | trans,
                         }) }}>
                             <td>
-                                {{ job.title }} (<a href="{{ job.url }}" target="_blank">{{ job.url }}</a>)
+                                {% set postObj = post(job.postId) %}
+                                {{ postObj.name }} (<a href="{{ postObj | post_url }}" target="_blank">{{ postObj | post_url }}</a>)
                             </td>
                             <td>
-                                {% if job.pin is same as constant('App\\Enum\\PinType::PinToCommunity') %}
+                                {% if job.pinType is same as constant('App\\Enum\\PinType::PinToCommunity') %}
                                     {{ "Pin to community" | trans }}
-                                {% elseif job.pin is same as constant('App\\Enum\\PinType::UnpinFromCommunity') %}
+                                {% elseif job.pinType is same as constant('App\\Enum\\PinType::UnpinFromCommunity') %}
                                     {{ "Unpin from community" | trans }}
-                                {% elseif job.pin is same as constant('App\\Enum\\PinType::PinToInstance') %}
+                                {% elseif job.pinType is same as constant('App\\Enum\\PinType::PinToInstance') %}
                                     {{ "Pin to instance" | trans }}
-                                {% elseif job.pin is same as constant('App\\Enum\\PinType::UnpinFromInstance') %}
+                                {% elseif job.pinType is same as constant('App\\Enum\\PinType::UnpinFromInstance') %}
                                     {{ "Unpin from instance" | trans }}
                                 {% endif %}
                             </td>
-                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
+                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
                             <td>
                                 <button class="btn btn-danger"
                                         type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
@@ -149,23 +152,26 @@
                         {% for job in postReportJobs %}
                             <tr {{ stimulus_controller('scheduled-job', {
                                 cancelUrl: path('app.post.ajax.cancel', {
-                                    jobId: job.jobId,
+                                    type: job | class_name,
+                                    jobId: job.id,
                                 }),
                                 errorDeletingText: "There was an error when cancelling the job." | trans,
                             }) }}>
                                 <td>
-                                    {% if job.user %}
-                                        <a href="{{ job.userUrl }}" target="_blank">{{ job.user }}</a>
+                                    {% if job.personId %}
+                                        {% set personObj = person(job.personId) %}
+                                        <a href="{{ personObj | person_url }}" target="_blank">{{ personObj | person_name }}</a>
                                     {% endif %}
-                                    {% if job.user and job.community %}
+                                    {% if job.personId and job.communityId %}
                                         {{ "at" | trans }}
                                     {% endif %}
-                                    {% if job.community %}
-                                        <a href="{{ job.communityUrl }}" target="_blank">{{ job.community }}</a>
+                                    {% if job.communityId %}
+                                        {% set communityObj = community(job.communityId) %}
+                                        <a href="{{ community(job.communityId) | community_url }}" target="_blank">{{ communityObj | community_name }}</a>
                                     {% endif %}
                                 </td>
-                                <td>{{ job.recurring ? 'Yes' | trans : "No" | trans }}</td>
-                                <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.dateTime | date('c') }}</td>
+                                <td>{{ job.scheduleExpression ? 'Yes' | trans : "No" | trans }}</td>
+                                <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
                                 <td>
                                     <button class="btn btn-danger"
                                             type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>

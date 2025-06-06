@@ -5,10 +5,9 @@ namespace App\Authentication;
 use App\Exception\InvalidTotpTokenException;
 use App\Exception\ProvideTotpException;
 use App\Job\FetchCommunitiesJob;
-use App\JobStamp\CancellableStamp;
-use App\JobStamp\RegistrableStamp;
 use App\Lemmy\LemmyApiFactory;
 use App\Service\CookieSetter;
+use DateInterval;
 use DateTimeImmutable;
 use Rikudou\LemmyApi\Exception\IncorrectPasswordException;
 use Rikudou\LemmyApi\Exception\IncorrectTotpToken;
@@ -29,9 +28,7 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\Security\Http\Util\TargetPathTrait;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use DateInterval;
 
 final class AppAuthenticator extends AbstractLoginFormAuthenticator
 {
@@ -97,11 +94,7 @@ final class AppAuthenticator extends AbstractLoginFormAuthenticator
         );
         $this->cookieSetter->setCookie($cookie);
 
-        $jobId = Uuid::v4();
-        $this->messageBus->dispatch(new FetchCommunitiesJob(instance: $instance, jwt: $cookieValue['jwt']), [
-            new CancellableStamp($jobId),
-            new RegistrableStamp($jobId),
-        ]);
+        $this->messageBus->dispatch(new FetchCommunitiesJob(instance: $instance, jwt: $cookieValue['jwt']));
 
         return new SelfValidatingPassport(
             new UserBadge("{$username}@{$instance}", static fn () => new User($username, $instance, $api->getJwt())),

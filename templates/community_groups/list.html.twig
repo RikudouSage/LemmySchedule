@@ -29,13 +29,14 @@
                             <td>{{ group.name }}</td>
                             <td>
                                 <ul>
-                                    {% for community in group %}
-                                        <li><a target="_blank" href="{{ community.actorId }}">{{ community.actorId }}</a></li>
+                                    {% for communityId in group.communityIds %}
+                                        {% set communityObj = community(communityId) %}
+                                        <li><a target="_blank" href="{{ communityObj | community_url }}">{{ communityObj | community_name }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </td>
                             <td>
-                                <a class="btn btn-danger" href="{{ path('app.community_groups.delete', {name: group.name}) }}">{{ "Delete" | trans }}</a>
+                                <a class="btn btn-danger" href="{{ path('app.community_groups.delete', {id: group.id}) }}">{{ "Delete" | trans }}</a>
                             </td>
                         </tr>
                     {% else %}

@@ -3,29 +3,32 @@
 namespace App\Controller;
 
 use App\Authentication\User;
-use App\Dto\CommunityGroup;
+use App\Entity\CreatePostStoredJob;
+use App\Entity\PostPinUnpinStoredJob;
+use App\Entity\UnreadPostReportStoredJob;
 use App\Enum\DayType;
 use App\Enum\PinType;
 use App\Enum\ScheduleType;
 use App\Enum\Weekday;
 use App\FileProvider\FileProvider;
 use App\FileUploader\FileUploader;
-use App\Job\CreatePostJob;
-use App\Job\DeleteFileJob;
-use App\Job\PinUnpinPostJob;
-use App\Job\PinUnpinPostJobV2;
-use App\Job\ReportUnreadPostsJob;
-use App\JobStamp\MetadataStamp;
+use App\Job\CreatePostJobV2;
+use App\Job\DeleteFileJobV2;
+use App\Job\PinUnpinPostJobV3;
+use App\Job\ReportUnreadPostsJobV2;
 use App\Lemmy\LemmyApiFactory;
-use App\Service\CommunityGroupManager;
+use App\Repository\CommunityGroupRepository;
+use App\Repository\CreatePostStoredJobRepository;
+use App\Repository\PostPinUnpinStoredJobRepository;
+use App\Repository\UnreadPostReportStoredJobRepository;
 use App\Service\CurrentUserService;
-use App\Service\JobManager;
+use App\Service\JobScheduler;
 use App\Service\ScheduleExpressionParser;
 use App\Service\TitleExpressionReplacer;
 use DateInterval;
 use DateTimeImmutable;
-use DateTimeInterface;
 use DateTimeZone;
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
@@ -42,10 +45,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Uid\Uuid;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/post')]
@@ -59,124 +59,32 @@ final class PostController extends AbstractController
     #[Route('/help/expressions', name: 'app.post.expressions_help', methods: [Request::METHOD_GET])]
     public function expressionsHelp(
         TitleExpressionReplacer $expressionReplacer,
-    ): Response
-    {
+    ): Response {
         return $this->render('post/expressions_help.html.twig', [
             'expression' => $expressionReplacer,
         ]);
     }
 
     #[Route('/list', name: 'app.post.list', methods: [Request::METHOD_GET])]
-    public function listPosts(JobManager $jobManager, LemmyApiFactory $apiFactory, bool $unreadPostsEnabled): Response
-    {
-        $api = $apiFactory->getForCurrentUser();
+    public function listPosts(
+        bool $unreadPostsEnabled,
+        CreatePostStoredJobRepository $createJobRepository,
+        PostPinUnpinStoredJobRepository $pinJobRepository,
+        UnreadPostReportStoredJobRepository $reportJobRepository,
+    ): Response {
+        if (!$this->getUser()) {
+            throw $this->createNotFoundException('No user logged in');
+        }
 
-        $postCreateJobs = array_filter($jobManager->listJobs(), static function (Envelope $envelope) use ($jobManager) {
-            $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
-
-            return $envelope->getMessage() instanceof CreatePostJob && $jobId && !$jobManager->isCancelled($jobId);
-        });
-        $postCreateJobs = array_map(static function (Envelope $job) {
-            $message = $job->getMessage();
-            assert($message instanceof CreatePostJob);
-
-            $community = "!{$message->community->name}@" . parse_url($message->community->actorId, PHP_URL_HOST);
-            $title = $message->title;
-
-            $metadata = $job->last(MetadataStamp::class);
-            assert($metadata !== null);
-
-            $dateTime = $metadata->metadata['expiresAt'];
-            assert($dateTime instanceof DateTimeInterface);
-            $id = $metadata->metadata['jobId'];
-
-            return [
-                'jobId' => $id,
-                'dateTime' => $dateTime->format('c'),
-                'community' => $community,
-                'title' => $title,
-                'recurring' => $message->scheduleExpression !== null,
-            ];
-        }, $postCreateJobs);
-        usort($postCreateJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
-
-        $postPinJobs = array_filter($jobManager->listJobs(), static function (Envelope $envelope) use ($jobManager) {
-            $jobId = $envelope->last(MetadataStamp::class)?->metadata['jobId'];
-
-            return ($envelope->getMessage() instanceof PinUnpinPostJob || $envelope->getMessage() instanceof PinUnpinPostJobV2)
-                && $jobId && !$jobManager->isCancelled($jobId);
-        });
-        $postPinJobs = array_map(static function (Envelope $job) use ($api) {
-            $message = $job->getMessage();
-            assert($message instanceof PinUnpinPostJob || $message instanceof PinUnpinPostJobV2);
-
-            $metadata = $job->last(MetadataStamp::class);
-            assert($metadata !== null);
-
-            $dateTime = $metadata->metadata['expiresAt'];
-            assert($dateTime instanceof DateTimeInterface);
-            $id = $metadata->metadata['jobId'];
-
-            try {
-                $post = $api->post()->get($message->postId);
-            } catch (LemmyApiException) {
-                $post = null;
-            }
-
-            return [
-                'jobId' => $id,
-                'dateTime' => $dateTime->format('c'),
-                'url' => "https://{$message->instance}/post/{$message->postId}",
-                'title' => $post?->post->name ?? 'Unknown',
-                'pin' => $message instanceof PinUnpinPostJob
-                    ? ($message->pin ? PinType::PinToCommunity : PinType::UnpinFromCommunity)
-                    : $message->pin,
-            ];
-        }, $postPinJobs);
-        usort($postPinJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
-
-        $postReportJobs = array_map(
-            fn (Envelope $job) => $this->getJobArray($job, callbacks: [
-                'community' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->community === null) {
-                        return null;
-                    }
-                    $host = parse_url($job->community->actorId, PHP_URL_HOST);
-
-                    return "!{$job->community->name}@{$host}";
-                },
-                'user' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->person === null) {
-                        return null;
-                    }
-                    $host = parse_url($job->person->actorId, PHP_URL_HOST);
-
-                    return "@{$job->person->name}@{$host}";
-                },
-                'communityUrl' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->community === null) {
-                        return null;
-                    }
-                    $host = parse_url($job->community->actorId, PHP_URL_HOST);
-                    $community = "{$job->community->name}@{$host}";
-
-                    return "https://{$job->instance}/c/{$community}";
-                },
-                'userUrl' => static function (ReportUnreadPostsJob $job) {
-                    if ($job->person === null) {
-                        return null;
-                    }
-
-                    $host = parse_url($job->person->actorId, PHP_URL_HOST);
-                    $user = "{$job->person->name}@{$host}";
-
-                    return "https://{$job->instance}/u/{$user}";
-                },
-                'recurring' => static fn (ReportUnreadPostsJob $job) => $job->scheduleExpression !== null,
-            ]),
-            $jobManager->getActiveJobsByType(ReportUnreadPostsJob::class),
-        );
-        usort($postReportJobs, static fn (array $a, array $b) => $a['dateTime'] <=> $b['dateTime']);
+        $postCreateJobs = $createJobRepository->findBy([
+            'userId' => $this->getUser()->getUserIdentifier(),
+        ], ['scheduledAt' => 'DESC']);
+        $postPinJobs = $pinJobRepository->findBy([
+            'userId' => $this->getUser()->getUserIdentifier(),
+        ], ['scheduledAt' => 'DESC']);
+        $postReportJobs = $reportJobRepository->findBy([
+            'userId' => $this->getUser()->getUserIdentifier(),
+        ], ['scheduledAt' => 'DESC']);
 
         return $this->render('post/list.html.twig', [
             'postCreateJobs' => $postCreateJobs,
@@ -188,45 +96,30 @@ final class PostController extends AbstractController
 
     #[Route('/detail/{jobId}', name: 'app.post.detail', methods: [Request::METHOD_GET])]
     public function detail(
-        Uuid $jobId,
-        JobManager $jobManager,
+        int $jobId,
         ScheduleExpressionParser $scheduleExpressionParser,
+        CreatePostStoredJobRepository $createJobRepository,
     ): Response {
-        $job = $jobManager->getJob($jobId);
-        $message = $job?->getMessage();
-        if (!$message instanceof CreatePostJob) {
-            throw $this->createNotFoundException();
+        $job = $createJobRepository->find($jobId);
+        if ($job === null) {
+            throw $this->createNotFoundException('Job not found');
+        }
+        if ($job->getUserId() !== $this->getUser()->getUserIdentifier()) {
+            throw $this->createAccessDeniedException('You do not have access to this job');
         }
 
-        $metadata = $job->last(MetadataStamp::class);
-        assert($metadata !== null);
-
-        $dateTime = $metadata->metadata['expiresAt'];
-        assert($dateTime instanceof DateTimeInterface);
-
-        $job = [
-            'jobId' => (string) $jobId,
-            'text' => $message->text,
-            'url' => $message->url,
-            'title' => $message->title,
-            'community' => sprintf('!%s@%s', $message->community->name, parse_url($message->community->actorId, PHP_URL_HOST)),
-            'nsfw' => $message->nsfw,
-            'pinToCommunity' => $message->pinToCommunity,
-            'pinToInstance' => $message->pinToInstance,
-            'language' => $message->language,
-            'image' => $message->imageId,
-            'recurring' => $message->scheduleExpression !== null,
-            'dateTime' => $dateTime,
-            'nextRuns' => $message->scheduleExpression ? [
-                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 1, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
-                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 2, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
-                $scheduleExpressionParser->getNextRunDate(expression: $message->scheduleExpression, nth: 3, timeZone: new DateTimeZone((string) $message->scheduleTimezone)),
-            ] : null,
-            'unpinAt' => $message->unpinAt,
-        ];
+        $nextRuns = null;
+        if ($scheduleExpression = $job->getScheduleExpression()) {
+            $nextRuns = [
+                $scheduleExpressionParser->getNextRunDate(expression: $scheduleExpression, nth: 1, timeZone: new DateTimeZone($job->getScheduleTimezone())),
+                $scheduleExpressionParser->getNextRunDate(expression: $scheduleExpression, nth: 2, timeZone: new DateTimeZone($job->getScheduleTimezone())),
+                $scheduleExpressionParser->getNextRunDate(expression: $scheduleExpression, nth: 3, timeZone: new DateTimeZone($job->getScheduleTimezone())),
+            ];
+        }
 
         return $this->render('post/detail.html.twig', [
             'job' => $job,
+            'nextRuns' => $nextRuns,
         ]);
     }
 
@@ -239,9 +132,9 @@ final class PostController extends AbstractController
         iterable $fileProviders,
         #[Autowire('%app.default_post_language%')]
         int $defaultLanguage,
-        CommunityGroupManager $groupManager,
         #[Autowire('%app.default_communities%')]
         array $defaultCommunities,
+        CommunityGroupRepository $groupRepository,
     ): Response {
         $fileProviders = [...$fileProviders];
         $default = (array_values(array_filter($fileProviders, static fn (FileProvider $fileProvider) => $fileProvider->isDefault()))[0] ?? null)?->getId();
@@ -250,7 +143,7 @@ final class PostController extends AbstractController
         }
 
         $defaultCommunities = array_map(
-            fn (string $community) => str_starts_with($community, '!') ? $community : '!' . $community,
+            static fn (string $community) => str_starts_with($community, '!') ? $community : '!' . $community,
             $defaultCommunities,
         );
 
@@ -261,7 +154,7 @@ final class PostController extends AbstractController
             'selectedLanguage' => Language::tryFrom($defaultLanguage) ?? Language::Undetermined,
             'fileProviders' => [...$fileProviders],
             'defaultFileProvider' => $default,
-            'groups' => [...$groupManager->getGroups()],
+            'groups' => $groupRepository->findForCurrentUser(),
         ]);
     }
 
@@ -270,15 +163,16 @@ final class PostController extends AbstractController
         Request $request,
         LemmyApiFactory $apiFactory,
         TranslatorInterface $translator,
-        JobManager $jobManager,
         CurrentUserService $currentUserService,
         FileUploader $fileUploader,
         ScheduleExpressionParser $scheduleExpressionParser,
         #[TaggedIterator('app.file_provider')]
         iterable $fileProviders,
-        CommunityGroupManager $groupManager,
         #[Autowire('%app.default_post_language%')]
         int $defaultLanguage,
+        EntityManagerInterface $entityManager,
+        JobScheduler $jobScheduler,
+        CommunityGroupRepository $groupRepository,
     ) {
         $api = $apiFactory->getForCurrentUser();
         $user = $currentUserService->getCurrentUser() ?? throw new LogicException('No user logged in');
@@ -322,7 +216,7 @@ final class PostController extends AbstractController
             ...$data,
             'communities' => $this->getCommunities(),
             'languages' => Language::cases(),
-            'groups' => [...$groupManager->getGroups()],
+            'groups' => $groupRepository->findForCurrentUser(),
         ], new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY));
 
         if ($image && $data['url']) {
@@ -363,16 +257,15 @@ final class PostController extends AbstractController
         foreach ($data['selectedCommunities'] as $key => $selectedCommunity) {
             if (str_starts_with($selectedCommunity, 'group***')) {
                 $name = substr($selectedCommunity, strlen('group***'));
-                $group = $groupManager->getGroup($name);
+                $group = $groupRepository->findByNameForCurrentUser($name);
                 if ($group === null) {
                     $this->addFlash('error', $translator->trans('Could not find group called "{group}"', ['{group}' => $group]));
 
                     return $errorResponse();
                 }
                 unset($data['selectedCommunities'][$key]);
-                $groupCommunities = $group->communities;
-                foreach ($groupCommunities as $groupCommunity) {
-                    $data['selectedCommunities'][] = $groupCommunity->id;
+                foreach ($group->getCommunityIds() as $groupCommunityId) {
+                    $data['selectedCommunities'][] = $groupCommunityId;
                 }
             }
         }
@@ -429,9 +322,9 @@ final class PostController extends AbstractController
             return $errorResponse();
         }
 
-        $imageId = null;
+        $storedImage = null;
         if ($image instanceof UploadedFile) {
-            $imageId = $fileUploader->upload($image);
+            $storedImage = $fileUploader->upload($image);
         }
 
         if ($data['recurring']) {
@@ -443,33 +336,42 @@ final class PostController extends AbstractController
             $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
         }
         foreach ($communities as $community) {
-            $jobManager->createJob(
-                new CreatePostJob(
-                    jwt: $user->getJwt(),
-                    instance: $user->getInstance(),
-                    community: $community,
-                    title: $data['title'],
-                    url: $data['url'] ?: null,
-                    text: $data['text'] ?: null,
-                    language: $data['selectedLanguage'],
-                    nsfw: $data['nsfw'],
-                    pinToCommunity: $data['pinToCommunity'],
-                    pinToInstance: $data['pinToInstance'],
-                    imageId: $imageId,
-                    scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
-                    scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
-                    unpinAt: $data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null,
-                    fileProvider: $data['defaultFileProvider'],
-                    timezoneName: $data['timezoneName'],
-                    checkForUrlDuplicates: $data['checkForDuplicates'],
-                    comments: $data['comments'],
-                    thumbnailUrl: $data['thumbnailUrl'] ?: null,
-                ),
+            $entity = (new CreatePostStoredJob())
+                ->setJwt($user->getJwt())
+                ->setInstance($user->getInstance())
+                ->setCommunityId($community->id)
+                ->setTitle($data['title'])
+                ->setUrl($data['url'] ?: null)
+                ->setText($data['text'] ?: null)
+                ->setLanguage($data['selectedLanguage'])
+                ->setNsfw($data['nsfw'])
+                ->setPinToCommunity($data['pinToCommunity'])
+                ->setPinToInstance($data['pinToInstance'])
+                ->setImage($storedImage)
+                ->setScheduleExpression($data['recurring'] ? $data['scheduler']['expression'] : null)
+                ->setScheduleTimezone($data['recurring'] ? $data['scheduler']['timezone'] : null)
+                ->setUnpinAt($data['scheduleUnpinDateTime'] ? new DateTimeImmutable("{$data['scheduleUnpinDateTime']}:00{$data['timezoneOffset']}") : null)
+                ->setFileProviderId($data['defaultFileProvider'])
+                ->setTimezoneName($data['timezoneName'])
+                ->setCheckForUrlDuplicates($data['checkForDuplicates'])
+                ->setComments($data['comments'])
+                ->setThumbnailUrl($data['thumbnailUrl'] ?: null)
+                ->setUserId($this->getUser()->getUserIdentifier())
+                ->setScheduledAt($dateTime)
+            ;
+            $entityManager->persist($entity);
+            $entityManager->flush();
+
+            $jobScheduler->schedule(
+                new CreatePostJobV2($entity->getId()),
                 $dateTime,
             );
         }
-        if ($imageId !== null) {
-            $jobManager->createJob(new DeleteFileJob($imageId), $dateTime->add(new DateInterval('PT5M')));
+        if ($storedImage !== null) {
+            $jobScheduler->schedule(
+                new DeleteFileJobV2($storedImage->getId()),
+                $dateTime->add(new DateInterval('PT5M')),
+            );
         }
 
         $this->addFlash('success', $translator->trans('Posts have been successfully scheduled.'));
@@ -503,7 +405,8 @@ final class PostController extends AbstractController
         Request $request,
         LemmyApiFactory $apiFactory,
         TranslatorInterface $translator,
-        JobManager $jobManager,
+        JobScheduler $jobScheduler,
+        EntityManagerInterface $entityManager,
         CurrentUserService $currentUserService,
         ScheduleExpressionParser $scheduleExpressionParser,
         bool $unreadPostsEnabled,
@@ -604,29 +507,32 @@ final class PostController extends AbstractController
         }
         if (count($communities)) {
             foreach ($communities as $community) {
-                $jobManager->createJob(
-                    new ReportUnreadPostsJob(
-                        jwt: $user->getJwt(),
-                        instance: $user->getInstance(),
-                        community: $community,
-                        person: $person,
-                        scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
-                        scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
-                    ),
-                    $dateTime,
-                );
+                $entity = (new UnreadPostReportStoredJob())
+                    ->setJwt($user->getJwt())
+                    ->setInstance($user->getInstance())
+                    ->setCommunityId($community->id)
+                    ->setPersonId($person?->id)
+                    ->setScheduleExpression($data['recurring'] ? $data['scheduler']['expression'] : null)
+                    ->setScheduleTimezone($data['recurring'] ? $data['scheduler']['timezone'] : null)
+                    ->setUserId($user->getUserIdentifier())
+                    ->setScheduledAt($dateTime)
+                ;
+                $entityManager->persist($entity);
+                $jobScheduler->schedule(new ReportUnreadPostsJobV2($entity->getId()), $dateTime);
             }
+            $entityManager->flush();
         } else {
-            $jobManager->createJob(
-                new ReportUnreadPostsJob(
-                    jwt: $user->getJwt(),
-                    instance: $user->getInstance(),
-                    person: $person,
-                    scheduleExpression: $data['recurring'] ? $data['scheduler']['expression'] : null,
-                    scheduleTimezone: $data['recurring'] ? $data['scheduler']['timezone'] : null,
-                ),
-                $dateTime,
-            );
+            $entity = (new UnreadPostReportStoredJob())
+                ->setJwt($user->getJwt())
+                ->setInstance($user->getInstance())
+                ->setPersonId($person?->id)
+                ->setScheduleExpression($data['recurring'] ? $data['scheduler']['expression'] : null)
+                ->setScheduleTimezone($data['recurring'] ? $data['scheduler']['timezone'] : null)
+                ->setUserId($user->getUserIdentifier())
+                ->setScheduledAt($dateTime)
+            ;
+            $entityManager->persist($entity);
+            $jobScheduler->schedule(new ReportUnreadPostsJobV2($entity->getId()), $dateTime);
         }
 
         $this->addFlash('success', $translator->trans('Post reports have been successfully scheduled.'));
@@ -644,8 +550,9 @@ final class PostController extends AbstractController
     public function doPinPost(
         Request $request,
         TranslatorInterface $translator,
-        JobManager $jobManager,
+        JobScheduler $jobScheduler,
         CurrentUserService $currentUserService,
+        EntityManagerInterface $entityManager,
     ): Response {
         $errorResponse = fn () => $this->render('post/pin.html.twig');
 
@@ -697,13 +604,19 @@ final class PostController extends AbstractController
         }
 
         $dateTime = new DateTimeImmutable("{$request->request->get('scheduleDateTime')}:00{$request->request->get('timezoneOffset')}");
-        $jobManager->createJob(
-            new PinUnpinPostJobV2(
-                postId: (int) $urlOrId,
-                jwt: $currentUserService->getCurrentUser()?->getJwt() ?? throw new LogicException('No user logged in'),
-                instance: $currentUserService->getCurrentUser()?->getInstance() ?? throw new LogicException('No user logged in'),
-                pin: $pin,
-            ),
+        $entity = (new PostPinUnpinStoredJob())
+            ->setPostId((int) $urlOrId)
+            ->setJwt($currentUserService->getCurrentUser()?->getJwt() ?? throw new LogicException('No user logged in'))
+            ->setInstance($currentUserService->getCurrentUser()?->getInstance() ?? throw new LogicException('No user logged in'))
+            ->setUserId($currentUserService->getCurrentUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'))
+            ->setPinType($pin)
+            ->setScheduledAt($dateTime)
+        ;
+        $entityManager->persist($entity);
+        $entityManager->flush();
+
+        $jobScheduler->schedule(
+            new PinUnpinPostJobV3($entity->getId()),
             $dateTime,
         );
         $this->addFlash('success', $translator->trans('Post pin/unpin was successfully scheduled.'));
@@ -711,10 +624,20 @@ final class PostController extends AbstractController
         return $this->redirectToRoute('app.post.list');
     }
 
-    #[Route('/ajax/cancel/{jobId}', name: 'app.post.ajax.cancel', methods: [Request::METHOD_DELETE])]
-    public function cancelJob(Uuid $jobId, JobManager $jobManager): JsonResponse
+    #[Route('/ajax/cancel/{type}/{jobId}', name: 'app.post.ajax.cancel', methods: [Request::METHOD_DELETE])]
+    public function cancelJob(int $jobId, string $type, EntityManagerInterface $entityManager): JsonResponse
     {
-        $jobManager->cancelJob($jobId);
+        $repository = $entityManager->getRepository($type);
+        $entity = $repository->find($jobId);
+
+        if ($entity->getUserId() !== $this->getUser()->getUserIdentifier()) {
+            throw $this->createAccessDeniedException('You do not have access to this job');
+        }
+
+        if ($entity) {
+            $entityManager->remove($entity);
+            $entityManager->flush();
+        }
 
         return new JsonResponse(status: Response::HTTP_NO_CONTENT);
     }
@@ -807,6 +730,7 @@ final class PostController extends AbstractController
         HttpBrowser $browser,
     ): JsonResponse {
         $title = null;
+
         try {
             $json = json_decode($request->getContent(), true, flags: JSON_THROW_ON_ERROR);
             if (!isset($json['url'])) {
@@ -819,7 +743,7 @@ final class PostController extends AbstractController
 
             if ($ogTitleTag->count()) {
                 $title = $ogTitleTag->first()->attr('content');
-            } else if ($titleTag->count()) {
+            } elseif ($titleTag->count()) {
                 $title = $titleTag->first()->text();
             }
         } catch (Exception $e) {
@@ -841,42 +765,5 @@ final class PostController extends AbstractController
         $cacheItem = $this->cache->getItem("community_list_{$user->getInstance()}");
 
         return $cacheItem->isHit() ? $cacheItem->get() : [];
-    }
-
-    /**
-     * @param array<string|int, string>                       $fields
-     * @param array<string, callable(object $message): mixed> $callbacks
-     */
-    private function getJobArray(Envelope $job, array $fields = [], array $callbacks = []): array
-    {
-        $metadata = $job->last(MetadataStamp::class);
-        assert($metadata !== null);
-
-        $dateTime = $metadata->metadata['expiresAt'];
-        assert($dateTime instanceof DateTimeInterface);
-        $id = $metadata->metadata['jobId'];
-
-        $result = [
-            'jobId' => $id,
-            'dateTime' => $dateTime->format('c'),
-        ];
-
-        if (!count($fields) && !count($callbacks)) {
-            return $result;
-        }
-
-        $message = $job->getMessage();
-        foreach ($fields as $sourceField => $targetField) {
-            if (is_int($sourceField)) {
-                $sourceField = $targetField;
-            }
-            $result[$sourceField] = $message->{$targetField};
-        }
-
-        foreach ($callbacks as $field => $callback) {
-            $result[$field] = $callback($message);
-        }
-
-        return $result;
     }
 }

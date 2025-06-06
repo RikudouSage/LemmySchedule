@@ -3,10 +3,12 @@
 namespace App\Service;
 
 use App\Dto\CounterConfiguration;
+use JetBrains\PhpStorm\Deprecated;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
+#[Deprecated]
 final readonly class CountersRepository
 {
     public function __construct(
@@ -20,20 +22,32 @@ final readonly class CountersRepository
      */
     public function getCounters(): array
     {
-        $cacheItem = $this->getListItem();
+        return $this->getCountersForUser(
+            $this->currentUserService->getCurrentUser()->getUserIdentifier(),
+        );
+    }
+
+    /**
+     * @return array<CounterConfiguration>
+     */
+    public function getCountersForUser(string $userId): array
+    {
+        $cacheItem = $this->getListItem($userId);
         if (!$cacheItem->isHit()) {
             return [];
         }
 
         return array_filter(array_map(
-            fn (string $name) => $this->findByName($name),
+            fn (string $name) => $this->findByName($name, $userId),
             array_unique($cacheItem->get()),
         ));
     }
 
-    public function findByName(string $name): ?CounterConfiguration
+    public function findByName(string $name, ?string $userId = null): ?CounterConfiguration
     {
-        $key = $this->getItemKey($name);
+        $userId ??= $this->currentUserService->getCurrentUser()->getUserIdentifier();
+
+        $key = $this->getItemKey($name, $userId);
         $item = $this->cache->getItem($key);
         if (!$item->isHit()) {
             return null;
@@ -42,14 +56,16 @@ final readonly class CountersRepository
         return $item->get();
     }
 
-    public function store(CounterConfiguration $counterConfiguration): void
+    public function store(CounterConfiguration $counterConfiguration, ?string $userId = null): void
     {
-        $item = $this->cache->getItem($this->getItemKey($counterConfiguration));
+        $userId ??= $this->currentUserService->getCurrentUser()->getUserIdentifier();
+
+        $item = $this->cache->getItem($this->getItemKey($counterConfiguration, $userId));
         $item->set($counterConfiguration);
 
-        $listItem = $this->getListItem();
+        $listItem = $this->getListItem($userId);
         $list = $listItem->get() ?? [];
-        $list = $this->cleanupList($list);
+        $list = $this->cleanupList($list, $userId);
         $list[] = $counterConfiguration->name;
         $list = array_unique($list);
 
@@ -59,29 +75,33 @@ final readonly class CountersRepository
         $this->cache->save($listItem);
     }
 
-    public function delete(CounterConfiguration|string $counterConfiguration): void
+    public function delete(CounterConfiguration|string $counterConfiguration, ?string $userId = null): void
     {
-        $this->cache->deleteItem($this->getItemKey($counterConfiguration));
+        $userId ??= $this->currentUserService->getCurrentUser()->getUserIdentifier();
 
-        $listItem = $this->getListItem();
+        $this->cache->deleteItem($this->getItemKey($counterConfiguration, $userId));
+
+        $listItem = $this->getListItem($userId);
         $list = $listItem->get() ?? [];
-        $list = $this->cleanupList($list);
+        $list = $this->cleanupList($list, $userId);
         $listItem->set($list);
 
         $this->cache->save($listItem);
     }
 
-    private function getItemKey(CounterConfiguration|string $configuration): string
+    private function getItemKey(CounterConfiguration|string $configuration, string $userId): string
     {
         if (!is_string($configuration)) {
             $configuration = $configuration->name;
         }
-        return $this->normalizeKey("counter.{$this->currentUserService->getCurrentUser()->getUserIdentifier()}.{$configuration}");
+
+        return $this->normalizeKey("counter.{$userId}.{$configuration}");
     }
 
     private function normalizeKey(string $key): string
     {
         $reservedCharacters = str_split(ItemInterface::RESERVED_CHARACTERS);
+
         return str_replace(
             $reservedCharacters,
             '___',
@@ -89,20 +109,22 @@ final readonly class CountersRepository
         );
     }
 
-    private function getListItem(): CacheItemInterface
+    private function getListItem(string $userId): CacheItemInterface
     {
-        $listKey = $this->normalizeKey("counter.{$this->currentUserService->getCurrentUser()->getUserIdentifier()}");
+        $listKey = $this->normalizeKey("counter.{$userId}");
+
         return $this->cache->getItem($listKey);
     }
 
     /**
      * @param array<string> $list
+     *
      * @return array<string>
      */
-    private function cleanupList(array $list): array
+    private function cleanupList(array $list, string $userId): array
     {
         foreach ($list as $key => $item) {
-            if ($this->findByName($item) === null) {
+            if ($this->findByName($item, $userId) === null) {
                 unset($list[$key]);
             }
         }

@@ -13,13 +13,9 @@ An app that makes it possible to schedule posts on Lemmy.
     * [Configuring](#configuring)
       * [Job transports](#job-transports)
       * [File uploading](#file-uploading)
-      * [Cache](#cache)
+      * [File providers](#file-providers)
     * [Building](#building)
     * [Running](#running)
-  * [Self-hosting - AWS](#self-hosting---aws)
-    * [Prerequisites:](#prerequisites-1)
-    * [Environment variables](#environment-variables)
-    * [Deploying](#deploying)
   * [Self-hosting - docker](#self-hosting---docker)
     * [Configuration](#configuration)
     * [Volumes](#volumes)
@@ -35,8 +31,6 @@ An app that makes it possible to schedule posts on Lemmy.
   to take over the world.
 - [CreatePostJob](src/Job/CreatePostJob.php) - the job that gets saved to schedule your post, as you can see
   I store your JWT to impersonate you, but sadly it's impossible to do without.
-- [EventBridgeTransport](src/JobTransport/EventBridgeTransport.php) - here you can see that the job is deleted
-  immediately after the job is triggered (see the line that reads `'ActionAfterCompletion' => ActionAfterCompletion::DELETE`)
 
 ## How it works?
 
@@ -46,22 +40,10 @@ It uses the excellent [Symfony](https://symfony.com) framework and even more exc
 Basically, it creates a Messenger job and configures a delay for the job that is the same as the time of the post.
 The job is then received, processed and deleted (depends on your particular messenger backend).
 
-The default deployment using the provided `serverless` configuration has a little twist on that: to be fully serverless,
-the messenger backend is faked to be an EventBridge service and it only allows creating jobs, which it does by creating
-a scheduled job which in turn posts to a console command [`app:run-sync`](src/Command/RunJobSynchronously.php).
-
-The console command takes the job, overwrites the transport config to force it to run synchronously in the command
-and thus the need for a queue consumer is avoided.
-I'm still not sure whether this is a genius idea or a blasphemy.
-But it saves me money for hosting, so I'm gonna go with genius.
-
-Instead of database it uses a cache backend which can be any PSR-6 backend, the default configuration uses
-a DynamoDB one.
-
 ## Building the app locally
 
 > Note that this is a tutorial for a fully local deployment, depending on the method you'll be using
-> for deployment (Docker, AWS serverless), you might not need to set up everything mentioned below, feel free
+> for deployment (like Docker), you might not need to set up everything mentioned below, feel free
 > to skip to the specific guides below and use this only as a reference if you want a deeper understanding of
 > how the app works.
 
@@ -69,8 +51,7 @@ Here's a brief tutorial on how to build a production version of the app.
 
 ### Prerequisites
 
-- php (8.2, intl and json extensions), composer etc.
-- serverless framework
+- php (8.4, intl and json extensions), composer etc.
 - yarn (if you use a different node package manager, you can adapt the commands to it)
 
 ### Configuring
@@ -87,14 +68,11 @@ in `.env.local` file.
 | `DYNAMODB_CACHE_TABLE`      | the name of the AWS DynamoDB table to use for cache, ignore this option if you don't use DynamoDB for cache                                                                                  | `cache`                                              | no           |
 | `AWS_REGION`                | the name of the AWS region to use, you can ignore this if you're not using DynamoDB for cache and AWS EventBridge as a job scheduler                                                         | `eu-central-1`                                       | no           |
 | `MESSENGER_TRANSPORT_DSN`   | the DSN for job transport, more below                                                                                                                                                        | `redis://localhost:6379/messages`                    | **yes**      |
-| `DOMAIN_NAME`               | the domain this will be running on, only needed when running on AWS serverless                                                                                                               |                                                      | no           |
-| `CONSOLE_FUNCTION`          | the AWS ARN of the console function, only needed when running on AWS serverless                                                                                                              |                                                      | no           |
-| `ROLE_ARN`                  | the AWS ARN of the role used for running jobs, only needed when running on AWS serverless                                                                                                    |                                                      | no           |
 | `DEFAULT_INSTANCE`          | the default instance for logging in                                                                                                                                                          | `lemmings.wolrd`                                     | **yes**      |
 | `FILE_UPLOADER_CLASS`       | the class that handles uploading of files, note that **this needs to be set prior to compiling the service container**                                                                       | `App\FileUploader\LocalFileUploader`                 | **yes**      |
 | `LOCAL_FILE_UPLOADER_PATH`  | the filesystem path to store files in temporarily - the default uses a volatile location that might get deleted often, so it's advised to change it                                          | `%kernel.project_dir%/var/images`                    | no           |
 | `S3_FILE_UPLOADER_BUCKET`   | the bucket to use for storing files temporarily, only used if file uploader is set to AWS S3                                                                                                 |                                                      | no           |
-| `APP_CACHE_DIR`             | the directory for storing cache, it should be some permanent directory                                                                                                                       |                                                      | no           |
+| `APP_CACHE_DIR`             | the directory for storing cache and database, it should be some permanent directory                                                                                                          |                                                      | no           |
 | `APP_LOG_DIR`               | the directory for storing logs                                                                                                                                                               |                                                      | no           |
 | `SINGLE_INSTANCE_MODE`      | set to either 1 or 0, 1 means that only users from the instance specified in `DEFAULT_INSTANCE` can log in                                                                                   | 0                                                    | **yes**      |
 | `IMGUR_ACCESS_TOKEN`        | set to Imgur access token if you want to enable Imgur                                                                                                                                        |                                                      | no           |
@@ -147,12 +125,7 @@ Currently supported ones:
 
 - **instance upload** - the default, always supported
 - **Imgur** - an Imgur access token is required
-
-#### Cache
-
-If you're **not** using DynamoDB for cache, 
-delete the file [config/packages/prod/rikudou_dynamo_db_cache.yaml](config/packages/prod/rikudou_dynamo_db_cache.yaml)
-(before compiling the service container).
+- **Catbox** - you must either provide a user hash or allow anonymous usage
 
 ### Building
 
@@ -167,55 +140,6 @@ Done!
 
 If you want to test it out, run the development php server using `php -S 127.0.0.1:8000`, otherwise follow
 some guide to set up a webserver, Apache being the easiest solution.
-
-## Self-hosting - AWS
-
-> If you intend to self-host using docker, skip this section
-
-> Note: This flow can also always be checked in [publish.yaml](.github/workflows/publish.yaml)
-
-### Prerequisites:
-
-- read the [section on building the app](#building-the-app-locally)
-- aws cli
-- a domain in AWS Route53
-
-### Environment variables
-
-These variables are provided automatically and you cannot change them:
-
-- `APP_ENV`
-- `APP_SECRET`
-- `DYNAMODB_CACHE_TABLE`
-- `MESSENGER_TRANSPORT_DSN`
-- `S3_FILE_UPLOADER_BUCKET`
-- `FILE_UPLOADER_CLASS`
-- `ROLE_ARN`
-- `APP_CACHE_DIR`
-- `APP_LOG_DIR`
-
-You need to set these environment variables (as real environment variables, not as part of .env.local):
-
-- `DOMAIN_NAME`
-- `DOMAIN_ZONE` - the zone ID of the Route53 domain
-
-You may set these environment variables as well (as real environment variables, not as part of .env.local):
-
-- `SINGLE_INSTANCE_MODE`
-- `IMGUR_ACCESS_TOKEN`
-- `UNREAD_POSTS_BOT_JWT`
-- `UNREAD_POSTS_BOT_INSTANCE`
-- `FLAG_COMMUNITY_GROUPS`
-
-### Deploying
-
-- Follow the guide on [building](#building)
-- Deploy using the `serverless` command: `serverless deploy --stage prod --verbose`
-  - The `--stage prod` can be changed to `--stage dev` for a dev build
-  - The `--verbose` flag can be skipped if you want less output
-
-If everything works out,
-you should be able to visit the domain which you specified in `DOMAIN_NAME` and the app should be running there!
 
 ## Self-hosting - docker
 
@@ -273,9 +197,9 @@ version: "3.7"
 
 services:
   redis:
-    image: redis
+    image: valkey/valkey
     hostname: redis
-    command: redis-server --save 60 1 --loglevel warning # make Redis dump the contents to disk and restore them on start
+    command: valkey-server --save 60 1 --loglevel warning # make Redis dump the contents to disk and restore them on start
     volumes:
       - redis_data:/data
   lemmy_schedule:
@@ -286,7 +210,7 @@ services:
       APP_SECRET: $APP_SECRET # actually create the secret, don't just use this value
       DEFAULT_INSTANCE: my.instance.tld
     volumes:
-      - ./volumes/lemmy-schedule-cache:/opt/runtime-cache
+      - ./volumes/lemmy-schedule-data:/opt/runtime-cache
       - ./volumes/lemmy-schedule-uploads:/opt/uploaded-files
     depends_on:
       - redis

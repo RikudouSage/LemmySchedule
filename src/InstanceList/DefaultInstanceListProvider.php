@@ -3,7 +3,8 @@
 namespace App\InstanceList;
 
 use App\Job\RefreshInstanceListJob;
-use App\Service\JobManager;
+use App\Service\JobScheduler;
+use DateTimeImmutable;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
 #[AsTaggedItem(priority: -1_000)]
@@ -11,7 +12,7 @@ final readonly class DefaultInstanceListProvider implements InstanceListProvider
 {
     public function __construct(
         private string $defaultInstance,
-        private JobManager $jobManager,
+        private JobScheduler $jobScheduler,
     ) {
     }
 
@@ -22,7 +23,8 @@ final readonly class DefaultInstanceListProvider implements InstanceListProvider
 
     public function getInstances(): array
     {
-        $this->jobManager->createJob(new RefreshInstanceListJob(), null);
+        // todo better logic
+        $this->jobScheduler->schedule(new RefreshInstanceListJob(), new DateTimeImmutable());
 
         return array_unique([
             $this->defaultInstance,

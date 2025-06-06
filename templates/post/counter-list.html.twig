@@ -34,7 +34,7 @@
                         <td><a href="{{ path('app.counters.edit', {name: counter.name}) }}">{{ counter.name }}</a></td>
                         <td {{ stimulus_controller('format-number') }}>{{ counter.value }}</td>
                         <td {{ stimulus_controller('format-number') }}>{{ counter.incrementBy }}</td>
-                        <td><a class="btn btn-danger" href="{{ path('app.counters.delete', {name: counter.name}) }}">{{ "Delete" | trans }}</a></td>
+                        <td><a class="btn btn-danger" href="{{ path('app.counters.delete', {id: counter.id}) }}">{{ "Delete" | trans }}</a></td>
                     </tr>
                 {% else %}
                     <tr>

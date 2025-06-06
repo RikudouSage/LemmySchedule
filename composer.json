@@ -4,7 +4,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-imagick": "*",
@@ -15,13 +15,18 @@
         "bref/extra-php-extensions": "^1.4",
         "bref/symfony-bridge": "^0.2.2",
         "bref/symfony-messenger": "^0.5.4",
+        "doctrine/dbal": "^3",
+        "doctrine/doctrine-bundle": "^2.14",
+        "doctrine/doctrine-migrations-bundle": "^3.4",
+        "doctrine/orm": "^3.3",
         "dragonmantank/cron-expression": "^3.3",
         "league/commonmark": "^2.7",
         "nyholm/psr7": "^1.8",
         "php-http/discovery": "^1.18",
         "psr/http-factory-implementation": "*",
+        "rikudou/iterables": "^1.4",
         "rikudou/lemmy-api": "^0.8.0",
-        "rikudou/psr6-dynamo-db-bundle": "^4.0",
+        "rikudou/psr6-dynamo-db": "^3.2",
         "symfony/amazon-sqs-messenger": "*",
         "symfony/apache-pack": "^1.0",
         "symfony/asset": "*",
@@ -98,7 +103,8 @@
     "extra": {
         "symfony": {
             "allow-contrib": true,
-            "require": "6.4.*"
+            "require": "6.4.*",
+            "docker": true
         }
     },
     "require-dev": {

@@ -4,8 +4,10 @@ namespace App\JobHandler;
 
 use App\FileUploader\FileUploader;
 use App\Job\DeleteFileJob;
+use JetBrains\PhpStorm\Deprecated;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+#[Deprecated]
 #[AsMessageHandler]
 final readonly class DeleteFileJobHandler
 {

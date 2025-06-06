@@ -4,6 +4,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.default_var_location: '%kernel.project_dir%/var'
+    app.cache_dir: '%env(default:app.default_var_location:resolve:APP_CACHE_DIR)%'
     app.default_instance: '%env(DEFAULT_INSTANCE)%'
     app.single_instance: '%env(bool:SINGLE_INSTANCE_MODE)%'
     app.default_post_language: '%env(int:DEFAULT_POST_LANGUAGE)%'
@@ -67,7 +69,7 @@ services:
             $allowAnonymous: '%app.file_provider.catbox.allow_anonymous%'
             $userHash: '%app.file_provider.catbox.user_hash%'
 
-    App\JobHandler\ReportUnreadPostsJobHandler:
+    App\JobHandler\ReportUnreadPostsJobV2Handler:
         arguments:
             $botInstance: '%app.unread_posts.bot_instance%'
             $botJwt: '%app.unread_posts.bot_jwt%'

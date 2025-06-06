@@ -2,12 +2,16 @@
 
 namespace App\Service;
 
+use App\Authentication\User;
 use App\Dto\CommunityGroup;
 use App\Exception\UserNotLoggedInException;
 use App\Lemmy\LemmyApiFactory;
+use JetBrains\PhpStorm\Deprecated;
 use Psr\Cache\CacheItemPoolInterface;
+use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
 
+#[Deprecated]
 final readonly class CommunityGroupManager
 {
     public function __construct(
@@ -26,11 +30,21 @@ final readonly class CommunityGroupManager
         if (!$currentUser) {
             throw new UserNotLoggedInException('There is no logged in user');
         }
-        $cacheItem = $this->cache->getItem("community_groups_{$currentUser->getUsername()}_{$currentUser->getInstance()}");
+
+        return $this->getGroupsForUser($currentUser->getUserIdentifier());
+    }
+
+    /**
+     * @return iterable<CommunityGroup>
+     */
+    public function getGroupsForUser(string $userId): iterable
+    {
+        $normalized = str_replace('@', '_', $userId);
+        $cacheItem = $this->cache->getItem("community_groups_{$normalized}");
         $groups = $cacheItem->isHit() ? $cacheItem->get() : [];
         assert(is_array($groups));
 
-        $api = $this->apiFactory->getForCurrentUser();
+        $api = $this->apiFactory->get(instance: parse_url("https://{$userId}", PHP_URL_HOST));
 
         foreach ($groups as $group) {
             assert(isset($group['name']));
@@ -38,10 +52,18 @@ final readonly class CommunityGroupManager
 
             yield new CommunityGroup(
                 name: $group['name'],
-                communities: array_map(
-                    static fn (int $id) => $api->community()->get($id)->community,
-                    $group['community_ids'],
-                ),
+                communities: array_filter(
+                    array_map(
+                        static function (int $id) use ($api) {
+                            try {
+                                return $api->community()->get($id)->community;
+                            } catch (LemmyApiException) {
+                                return null;
+                            }
+                        },
+                        $group['community_ids'],
+                    ),
+                )
             );
         }
     }
@@ -78,13 +100,13 @@ final readonly class CommunityGroupManager
         $this->cache->save($cacheItem);
     }
 
-    public function deleteGroup(string $title): void
+    public function deleteGroup(string $title, ?User $user = null): void
     {
-        $currentUser = $this->currentUserService->getCurrentUser();
-        if (!$currentUser) {
+        $user ??= $this->currentUserService->getCurrentUser();
+        if (!$user) {
             throw new UserNotLoggedInException('There is no logged in user');
         }
-        $cacheItem = $this->cache->getItem("community_groups_{$currentUser->getUsername()}_{$currentUser->getInstance()}");
+        $cacheItem = $this->cache->getItem("community_groups_{$user->getUsername()}_{$user->getInstance()}");
         $groups = $cacheItem->isHit() ? $cacheItem->get() : [];
         $groups = array_filter($groups, static fn (array $group) => $group['name'] !== $title);
         $cacheItem->set($groups);

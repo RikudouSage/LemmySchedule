@@ -3,10 +3,12 @@
 namespace App\JobStamp;
 
 use App\Service\JobManager;
+use JetBrains\PhpStorm\Deprecated;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Middleware\MiddlewareInterface;
 use Symfony\Component\Messenger\Middleware\StackInterface;
 
+#[Deprecated]
 final readonly class CancellableStampHandler implements MiddlewareInterface
 {
     public function __construct(

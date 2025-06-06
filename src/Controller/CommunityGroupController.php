@@ -2,13 +2,17 @@
 
 namespace App\Controller;
 
+use App\Entity\CommunityGroup;
 use App\Lemmy\LemmyApiFactory;
-use App\Service\CommunityGroupManager;
+use App\Repository\CommunityGroupRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use LogicException;
 use Rikudou\LemmyApi\Exception\LemmyApiException;
+use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Unleash\Client\Bundle\Attribute\IsEnabled;
 
@@ -18,10 +22,12 @@ final class CommunityGroupController extends AbstractController
 {
     #[Route('', name: 'app.community_groups.list', methods: [Request::METHOD_GET])]
     public function listGroups(
-        CommunityGroupManager $communityGroupService,
+        CommunityGroupRepository $groupRepository,
     ): Response {
         return $this->render('community_groups/list.html.twig', [
-            'groups' => [...$communityGroupService->getGroups()],
+            'groups' => [...$groupRepository->findBy([
+                'userId' => $this->getUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'),
+            ])],
         ]);
     }
 
@@ -36,7 +42,7 @@ final class CommunityGroupController extends AbstractController
         Request $request,
         TranslatorInterface $translator,
         LemmyApiFactory $apiFactory,
-        CommunityGroupManager $communityGroupManager,
+        EntityManagerInterface $entityManager,
     ) {
         $post = $request->request;
 
@@ -81,17 +87,36 @@ final class CommunityGroupController extends AbstractController
             return $errorResponse();
         }
 
-        $communityGroupManager->addGroup($data['title'], $communities);
+        $entity = (new CommunityGroup())
+            ->setName($data['title'])
+            ->setCommunityIds(array_map(
+                static fn (Community $community) => $community->id,
+                $communities,
+            ))
+            ->setUserId($this->getUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'))
+        ;
+        $entityManager->persist($entity);
+        $entityManager->flush();
         $this->addFlash('success', $translator->trans('Your group was successfully created.'));
 
         return $this->redirectToRoute('app.community_groups.list');
     }
 
-    #[Route('/delete/{name}', name: 'app.community_groups.delete', methods: [Request::METHOD_GET])]
-    public function deleteGroup(string $name, CommunityGroupManager $groupManager, TranslatorInterface $translator): Response
-    {
-        $groupManager->deleteGroup($name);
-        $this->addFlash('success', $translator->trans('Group successfully deleted'));
+    #[Route('/delete/{id}', name: 'app.community_groups.delete', methods: [Request::METHOD_GET])]
+    public function deleteGroup(
+        int $id,
+        TranslatorInterface $translator,
+        EntityManagerInterface $entityManager,
+        CommunityGroupRepository $groupRepository,
+    ): Response {
+        $entity = $groupRepository->find($id);
+        if (!$entity) {
+            $this->addFlash('info', $translator->trans('Group not found'));
+        } else {
+            $entityManager->remove($entity);
+            $entityManager->flush();
+            $this->addFlash('success', $translator->trans('Group successfully deleted'));
+        }
 
         return $this->redirectToRoute('app.community_groups.list');
     }
