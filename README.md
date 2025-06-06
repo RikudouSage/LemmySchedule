@@ -4,8 +4,13 @@ An app that makes it possible to schedule posts on Lemmy.
 
 > Am I the only one who thinks it's funny how the name "Lemmy Schedule" sounds like "let me schedule"?
 
+## Migrating to 2.x
+
+If you're migrating to 2.x, please read the [migration guide](migrating_v2.md).
+
 <!-- TOC -->
 * [Lemmy Schedule](#lemmy-schedule)
+  * [Migrating to 2.x](#migrating-to-2x)
   * [Interesting parts](#interesting-parts)
   * [How it works?](#how-it-works)
   * [Building the app locally](#building-the-app-locally)
