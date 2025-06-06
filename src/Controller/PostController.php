@@ -422,6 +422,7 @@ final class PostController extends AbstractController
             'selectedCommunities' => $request->request->all('communities'),
             'scheduleDateTime' => $request->request->get('scheduleDateTime'),
             'timezoneOffset' => $request->request->get('timezoneOffset'),
+            'timezoneName' => $request->request->get('timezoneName'),
             'scheduler' => $request->request->all('scheduler'),
             'recurring' => $request->request->getBoolean('recurring'),
             'username' => $request->request->get('username'),
@@ -517,6 +518,7 @@ final class PostController extends AbstractController
                     ->setScheduleTimezone($data['recurring'] ? $data['scheduler']['timezone'] : null)
                     ->setUserId($user->getUserIdentifier())
                     ->setScheduledAt($dateTime)
+                    ->setTimezoneName($data['timezoneName'])
                 ;
                 $entityManager->persist($entity);
                 $entitiesToSchedule[] = $entity;
@@ -616,6 +618,7 @@ final class PostController extends AbstractController
             ->setUserId($currentUserService->getCurrentUser()?->getUserIdentifier() ?? throw new LogicException('No user logged in'))
             ->setPinType($pin)
             ->setScheduledAt($dateTime)
+            ->setTimezoneName($request->request->get('timezoneName'))
         ;
         $entityManager->persist($entity);
         $entityManager->flush();

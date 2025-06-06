@@ -9,6 +9,7 @@ export default class extends Controller {
         'oneTimeSchedule',
         'recurringSchedule',
         'timezoneOffset',
+        'timezoneName',
     ];
 
     private communitySelectTarget: HTMLSelectElement;
@@ -16,9 +17,11 @@ export default class extends Controller {
     private oneTimeScheduleTarget: HTMLDivElement;
     private recurringScheduleTarget: HTMLDivElement;
     private timezoneOffsetTarget: HTMLInputElement;
+    private timezoneNameTarget: HTMLInputElement;
 
     public async connect(): Promise<void> {
         this.timezoneOffsetTarget.value = DateHelper.getTimezoneOffset();
+        this.timezoneNameTarget.value = DateHelper.getTimezoneName();
 
         new TomSelect(this.communitySelectTarget, {
             create: true,

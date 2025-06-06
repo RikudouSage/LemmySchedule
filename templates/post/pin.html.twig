@@ -90,6 +90,7 @@
                             <input class="form-control" id="inputScheduleDateTime" name="scheduleDateTime"
                                    type="datetime-local" required value="{{ scheduleDateTime|default('') }}"/>
                             <input type="hidden" name="timezoneOffset" {{ stimulus_target('create-post-pin', 'timezoneOffset') }} />
+                            <input type="hidden" name="timezoneName" {{ stimulus_target('create-post-pin', 'timezoneName') }} />
                         </div>
 
                         <button class="btn btn-primary" type="submit">{{ "Schedule pin/unpin" | trans }}</button>
