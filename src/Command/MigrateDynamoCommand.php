@@ -9,6 +9,7 @@ use App\Service\CountersRepository as LegacyCounterRepository;
 use App\Service\CurrentUserService;
 use App\Service\DatabaseMigrator;
 use App\Service\JobManager;
+use App\Service\JobScheduler;
 use AsyncAws\DynamoDb\DynamoDbClient;
 use Doctrine\ORM\EntityManagerInterface;
 use Rikudou\DynamoDbCache\DynamoDbCache;
@@ -24,11 +25,12 @@ use Symfony\Component\Messenger\MessageBusInterface;
 final class MigrateDynamoCommand extends Command
 {
     public function __construct(
-        private readonly EntityManagerInterface  $entityManager,
-        private readonly FileUploader            $fileUploader,
-        private readonly CurrentUserService $currentUserService,
-        private readonly MessageBusInterface $messageBus,
-        private readonly LemmyApiFactory $lemmyApiFactory,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly FileUploader           $fileUploader,
+        private readonly CurrentUserService     $currentUserService,
+        private readonly MessageBusInterface    $messageBus,
+        private readonly LemmyApiFactory        $lemmyApiFactory,
+        private readonly JobScheduler $jobScheduler,
     ) {
         parent::__construct();
     }
@@ -90,6 +92,7 @@ final class MigrateDynamoCommand extends Command
                 currentUserService: $this->currentUserService,
                 cache: $dynamoCache,
             ),
+            jobScheduler: $this->jobScheduler,
         );
 
         $migrator->migrate();
