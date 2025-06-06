@@ -175,7 +175,8 @@ Other variables which might need changing:
 
 Some permanent files are accessible at these locations:
 
-- `/opt/runtime-cache` - used for storing configuration etc., **MUST be bound to a volume**
+- `/opt/runtime-cache` - legacy, used to contain runtime data, now needs to be bound only during the migration
+- `/opt/database` - this is where the main SQLite database lives
 - `/opt/uploaded-files` - directory for uploaded images, **MUST be bound to a volume**
 
 ### Ports
