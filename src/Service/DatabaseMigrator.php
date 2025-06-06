@@ -49,7 +49,7 @@ final readonly class DatabaseMigrator
         private FileUploader           $fileUploader,
         private CommunityGroupManager  $groupManager,
         private OldCountersRepository  $countersRepository,
-        private JobScheduler           $jobScheduler, private JobScheduler $jobScheduler,
+        private JobScheduler           $jobScheduler,
     ) {
     }
 
