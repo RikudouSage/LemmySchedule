@@ -3,6 +3,7 @@
 namespace App\Helper;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 
 trait CommonJobEntityFieldsTrait
@@ -70,8 +71,11 @@ trait CommonJobEntityFieldsTrait
         return $this->scheduledAt;
     }
 
-    public function setScheduledAt(DateTimeImmutable $scheduledAt): static
+    public function setScheduledAt(DateTimeInterface $scheduledAt): static
     {
+        if (!$scheduledAt instanceof DateTimeImmutable) {
+            $scheduledAt = DateTimeImmutable::createFromInterface($scheduledAt);
+        }
         $this->scheduledAt = $scheduledAt;
 
         return $this;

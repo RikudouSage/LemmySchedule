@@ -11,6 +11,7 @@ use App\Service\CurrentUserService;
 use App\Service\JobScheduler;
 use App\Service\ScheduleExpressionParser;
 use DateTimeZone;
+use Doctrine\ORM\EntityManagerInterface;
 use Rikudou\LemmyApi\Enum\ListingType;
 use Rikudou\LemmyApi\Enum\SortType;
 use Rikudou\LemmyApi\LemmyApi;
@@ -24,13 +25,14 @@ final readonly class ReportUnreadPostsJobV2Handler
     private LemmyApi $botApi;
 
     public function __construct(
-        private LemmyApiFactory $apiFactory,
-        private ScheduleExpressionParser $scheduleExpressionParser,
-        private CurrentUserService $currentUserService,
+        private LemmyApiFactory                     $apiFactory,
+        private ScheduleExpressionParser            $scheduleExpressionParser,
+        private CurrentUserService                  $currentUserService,
         private UnreadPostReportStoredJobRepository $jobRepository,
-        string $botJwt,
-        string $botInstance,
-        private JobScheduler $jobScheduler,
+        string                                      $botJwt,
+        string                                      $botInstance,
+        private JobScheduler                        $jobScheduler,
+        private EntityManagerInterface $entityManager,
     ) {
         $this->botApi = $this->apiFactory->get(instance: $botInstance, jwt: $botJwt);
     }
@@ -94,8 +96,13 @@ final readonly class ReportUnreadPostsJobV2Handler
                     expression: $expression,
                     timeZone: new DateTimeZone($job->getScheduleTimezone()),
                 );
+                $job->setScheduledAt($nextDate);
                 $this->jobScheduler->schedule($message, $nextDate);
+            } else {
+                $this->entityManager->remove($job);
             }
+
+            $this->entityManager->flush();
         }
     }
 
