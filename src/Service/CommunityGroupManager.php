@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Authentication\User;
 use App\Dto\CommunityGroup;
 use App\Exception\UserNotLoggedInException;
 use App\Lemmy\LemmyApiFactory;
@@ -99,13 +100,13 @@ final readonly class CommunityGroupManager
         $this->cache->save($cacheItem);
     }
 
-    public function deleteGroup(string $title): void
+    public function deleteGroup(string $title, ?User $user = null): void
     {
-        $currentUser = $this->currentUserService->getCurrentUser();
-        if (!$currentUser) {
+        $user ??= $this->currentUserService->getCurrentUser();
+        if (!$user) {
             throw new UserNotLoggedInException('There is no logged in user');
         }
-        $cacheItem = $this->cache->getItem("community_groups_{$currentUser->getUsername()}_{$currentUser->getInstance()}");
+        $cacheItem = $this->cache->getItem("community_groups_{$user->getUsername()}_{$user->getInstance()}");
         $groups = $cacheItem->isHit() ? $cacheItem->get() : [];
         $groups = array_filter($groups, static fn (array $group) => $group['name'] !== $title);
         $cacheItem->set($groups);

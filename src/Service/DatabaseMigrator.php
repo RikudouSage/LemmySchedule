@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Authentication\User;
 use App\Dto\CounterConfiguration;
 use App\Entity\CommunityGroup;
 use App\Entity\Counter;
@@ -14,10 +15,12 @@ use App\Job\PinUnpinPostJobV2;
 use App\Job\ReportUnreadPostsJob;
 use App\JobStamp\MetadataStamp;
 use App\Service\CountersRepository as OldCountersRepository;
+use AsyncAws\DynamoDb\ValueObject\AttributeValue;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+use Generator;
 use JetBrains\PhpStorm\Language;
 use LogicException;
 use Psr\Cache\CacheItemPoolInterface;
@@ -25,6 +28,8 @@ use Psr\Cache\InvalidArgumentException;
 use ReflectionException;
 use ReflectionMethod;
 use ReflectionProperty;
+use Rikudou\DynamoDbCache\DynamoDbCache;
+use Rikudou\Iterables\CacheableGenerator;
 use Rikudou\LemmyApi\Response\Model\Community;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\TraceableAdapter;
@@ -49,7 +54,6 @@ final readonly class DatabaseMigrator
      */
     public function migrate(): void
     {
-        $this->cache->deleteItem('migration_v2_succeeded');
         $cacheItem = $this->cache->getItem('migration_v2_succeeded');
         if ($cacheItem->isHit()) {
             return;
@@ -65,15 +69,16 @@ final readonly class DatabaseMigrator
 
     private function migrateGroups(): void
     {
-        /** @var array<string> $toDelete */
+        /** @var array<string, array<string>> $toDelete */
         $toDelete = [];
-        $repository = $this->entityManager->getrepository(CommunityGroup::class);
+        $repository = $this->entityManager->getRepository(CommunityGroup::class);
 
         foreach ($this->extractUserIds('@community_groups_(?<user>.+?)_(?<instance>.+)@') as $userId) {
+            $toDelete[$userId] ??= [];
             $groups = $this->groupManager->getGroupsForUser($userId);
             foreach ($groups as $group) {
                 if (in_array($group->name, $toDelete, true) || $repository->findOneBy(['name' => $group->name, 'userId' => $userId])) {
-                    $toDelete[] = $group->name;
+                    $toDelete[$userId][] = $group->name;
                     continue;
                 }
 
@@ -83,13 +88,16 @@ final readonly class DatabaseMigrator
                     ->setCommunityIds(array_map(static fn (Community $community) => $community->id, [...$group->communities]))
                 ;
                 $this->entityManager->persist($entity);
-                $toDelete[] = $group->name;
+                $toDelete[$userId][] = $group->name;
             }
         }
 
         $this->entityManager->flush();
-        foreach ($toDelete as $item) {
-            $this->groupManager->deleteGroup($item);
+        foreach ($toDelete as $userId => $items) {
+            $parsed = parse_url("ap://{$userId}");
+            foreach ($items as $item) {
+                $this->groupManager->deleteGroup($item, new User(username: $parsed['user'], instance: $parsed['host'], jwt: ''));
+            }
         }
     }
 
@@ -272,6 +280,35 @@ final readonly class DatabaseMigrator
             $files = $scanHashDir->invoke($cache, $directory->getValue($cache));
             foreach ($files as $file) {
                 $key = $getFileKey->invoke($cache, $file);
+                if (!preg_match($regex, $key, $matches)) {
+                    continue;
+                }
+                $userId = $matches['user'] . '@' . $matches['instance'];
+
+                yield $key => $userId;
+            }
+        } elseif ($cache instanceof DynamoDbCache) {
+            /** @var iterable<array<string, AttributeValue>>|null $dynamoItems */
+            static $dynamoItems = null;
+
+            $clientPropertyReflection = new ReflectionProperty($cache, 'client');
+            $tableNamePropertyReflection = new ReflectionProperty($cache, 'tableName');
+            $client = $clientPropertyReflection->getValue($cache);
+            $tableName = $tableNamePropertyReflection->getValue($cache);
+
+            if ($dynamoItems === null) {
+                $dynamoItems = $client->scan([
+                    'TableName' => $tableName,
+                ])->getItems();
+                if ($dynamoItems instanceof Generator) {
+                    $dynamoItems = new CacheableGenerator($dynamoItems);
+                } else {
+                    $dynamoItems = [...$dynamoItems];
+                }
+            }
+
+            foreach ($dynamoItems as $item) {
+                $key = $item['id']->getS();
                 if (!preg_match($regex, $key, $matches)) {
                     continue;
                 }

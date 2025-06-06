@@ -26,6 +26,7 @@
         "psr/http-factory-implementation": "*",
         "rikudou/iterables": "^1.4",
         "rikudou/lemmy-api": "^0.8.0",
+        "rikudou/psr6-dynamo-db": "^3.2",
         "symfony/amazon-sqs-messenger": "*",
         "symfony/apache-pack": "^1.0",
         "symfony/asset": "*",
