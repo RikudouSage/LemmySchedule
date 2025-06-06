@@ -155,8 +155,10 @@ final readonly class CreatePostJobV2Handler
                 ), $unpinAt);
             }
         } finally {
-            $this->entityManager->remove($job);
-            $this->entityManager->flush();
+            if (!$job->getScheduleExpression()) {
+                $this->entityManager->remove($job);
+                $this->entityManager->flush();
+            }
         }
     }
 
