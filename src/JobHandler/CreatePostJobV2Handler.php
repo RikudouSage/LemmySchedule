@@ -91,7 +91,7 @@ final readonly class CreatePostJobV2Handler
             date_default_timezone_set($originalTimezone);
 
             $post = $api->post()->create(
-                community: $job->community,
+                community: $job->getCommunityId(),
                 name: $title,
                 body: $job->getText(),
                 language: $job->getLanguage(),
