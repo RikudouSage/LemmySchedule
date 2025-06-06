@@ -506,6 +506,7 @@ final class PostController extends AbstractController
             $dateTime = new DateTimeImmutable("{$data['scheduleDateTime']}:00{$data['timezoneOffset']}");
         }
         if (count($communities)) {
+            $entitiesToSchedule = [];
             foreach ($communities as $community) {
                 $entity = (new UnreadPostReportStoredJob())
                     ->setJwt($user->getJwt())
@@ -518,9 +519,12 @@ final class PostController extends AbstractController
                     ->setScheduledAt($dateTime)
                 ;
                 $entityManager->persist($entity);
-                $jobScheduler->schedule(new ReportUnreadPostsJobV2($entity->getId()), $dateTime);
+                $entitiesToSchedule[] = $entity;
             }
             $entityManager->flush();
+            foreach ($entitiesToSchedule as $entity) {
+                $jobScheduler->schedule(new ReportUnreadPostsJobV2($entity->getId()), $dateTime);
+            }
         } else {
             $entity = (new UnreadPostReportStoredJob())
                 ->setJwt($user->getJwt())
@@ -532,6 +536,7 @@ final class PostController extends AbstractController
                 ->setScheduledAt($dateTime)
             ;
             $entityManager->persist($entity);
+            $entityManager->flush();
             $jobScheduler->schedule(new ReportUnreadPostsJobV2($entity->getId()), $dateTime);
         }
 
