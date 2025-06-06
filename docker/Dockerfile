@@ -1,10 +1,10 @@
 FROM php:8.4-apache
 
-ENV APP_ENV prod
+ENV APP_ENV=prod
 ENV APP_CACHE_DIR=/opt/runtime-cache
-ENV LOCAL_FILE_UPLOADER_PATH /opt/uploaded-files
+ENV LOCAL_FILE_UPLOADER_PATH=/opt/uploaded-files
 ENV MESSENGER_TRANSPORT_DSN=redis://redis:6379/lemmy_schedule_jobs
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 EXPOSE 80
 
