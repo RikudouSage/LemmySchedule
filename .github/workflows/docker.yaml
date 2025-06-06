@@ -28,24 +28,30 @@ jobs:
         run: 'echo -e "parameters:\n  app.current_version: $VERSION" > config/packages/version.yaml'
         env:
           VERSION: ${{ steps.extract_version.outputs.result }}
-      - name: Build docker
-        env:
-          VERSION: ${{ steps.extract_version.outputs.result }}
-        run: docker build -f docker/Dockerfile -t ghcr.io/rikudousage/lemmy-schedule:$VERSION --label "org.opencontainers.image.source=https://github.com/RikudouSage/LemmySchedule/" --label "org.opencontainers.image.licenses=MIT" .
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Push to docker
-        env:
-          VERSION: ${{ steps.extract_version.outputs.result }}
-        run: docker push ghcr.io/rikudousage/lemmy-schedule:$VERSION
-      - name: Push latest to docker
-        if: steps.extract_version.outputs.result != 'dev'
-        env:
-          VERSION: ${{ steps.extract_version.outputs.result }}
-        run: |
-          docker tag ghcr.io/rikudousage/lemmy-schedule:$VERSION ghcr.io/rikudousage/lemmy-schedule:latest
-          docker push ghcr.io/rikudousage/lemmy-schedule:latest
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/rikudousage/lemmy-schedule
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=dev
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64 #,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
