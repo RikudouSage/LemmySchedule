@@ -210,7 +210,8 @@ services:
       APP_SECRET: $APP_SECRET # actually create the secret, don't just use this value
       DEFAULT_INSTANCE: my.instance.tld
     volumes:
-      - ./volumes/lemmy-schedule-data:/opt/runtime-cache
+      - ./volumes/lemmy-schedule-cache:/opt/runtime-cache # This is only needed for if migrating from old format
+      - ./volumes/lemmy-schedule-database:/opt/database
       - ./volumes/lemmy-schedule-uploads:/opt/uploaded-files
     depends_on:
       - redis
