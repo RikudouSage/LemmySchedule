@@ -19,9 +19,9 @@ framework:
         log: true
 
     # trust the remote address because API Gateway has no fixed IP or CIDR range that we can target
-    trusted_proxies: '127.0.0.1'
+    trusted_proxies: 'REMOTE_ADDR' # todo change to private_addr
     # trust "X-Forwarded-*" headers coming from API Gateway
-    trusted_headers: [ 'x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-host' ]
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
     assets:
         base_urls:
             - '%env(ASSETS_URL)%'
