@@ -11,10 +11,14 @@ use App\Entity\PostPinUnpinStoredJob;
 use App\Entity\UnreadPostReportStoredJob;
 use App\FileUploader\FileUploader;
 use App\Job\CreatePostJob;
+use App\Job\CreatePostJobV2;
 use App\Job\PinUnpinPostJobV2;
+use App\Job\PinUnpinPostJobV3;
 use App\Job\ReportUnreadPostsJob;
+use App\Job\ReportUnreadPostsJobV2;
 use App\JobStamp\MetadataStamp;
 use App\Service\CountersRepository as OldCountersRepository;
+use App\Service\JobScheduler;
 use AsyncAws\DynamoDb\ValueObject\AttributeValue;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -39,12 +43,13 @@ use Symfony\Component\Uid\Uuid;
 final readonly class DatabaseMigrator
 {
     public function __construct(
-        private JobManager $jobManager,
+        private JobManager             $jobManager,
         private CacheItemPoolInterface $cache,
         private EntityManagerInterface $entityManager,
-        private FileUploader $fileUploader,
-        private CommunityGroupManager $groupManager,
-        private OldCountersRepository $countersRepository,
+        private FileUploader           $fileUploader,
+        private CommunityGroupManager  $groupManager,
+        private OldCountersRepository  $countersRepository,
+        private JobScheduler           $jobScheduler, private JobScheduler $jobScheduler,
     ) {
     }
 
@@ -148,14 +153,32 @@ final readonly class DatabaseMigrator
         /** @var array<Uuid> $jobsToDelete */
         $jobsToDelete = [];
 
+        /** @var array<object> $entities */
+        $entities = [];
+
         foreach ($this->listJobs() as $userId => $job) {
             if ($this->jobManager->isCancelled($job->last(MetadataStamp::class)->metadata['jobId'])) {
                 continue;
             }
-            $this->migrateJob($userId, $job, $jobsToDelete);
+            $entities[] = $this->migrateJob($userId, $job, $jobsToDelete);
         }
 
         $this->entityManager->flush();
+
+        foreach ($entities as $entity) {
+            if ($entity instanceof CreatePostStoredJob) {
+                $job = new CreatePostJobV2($entity->getId());
+            } else if ($entity instanceof PostPinUnpinStoredJob) {
+                $job = new PinUnpinPostJobV3($entity->getId());
+            } else if ($entity instanceof UnreadPostReportStoredJob) {
+                $job = new ReportUnreadPostsJobV2($entity->getId());
+            } else {
+                continue;
+            }
+
+            $this->jobScheduler->schedule($job, $entity->getScheduledAt());
+        }
+
         foreach ($jobsToDelete as $job) {
             $this->jobManager->cancelJob($job);
         }
