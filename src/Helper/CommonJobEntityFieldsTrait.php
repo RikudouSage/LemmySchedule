@@ -4,6 +4,7 @@ namespace App\Helper;
 
 use DateTimeImmutable;
 use DateTimeInterface;
+use DateTimeZone;
 use Doctrine\ORM\Mapping as ORM;
 
 trait CommonJobEntityFieldsTrait
@@ -91,5 +92,14 @@ trait CommonJobEntityFieldsTrait
         $this->timezoneName = $timezoneName;
 
         return $this;
+    }
+
+    public function getScheduledAtWithTimezone(): ?DateTimeImmutable
+    {
+        if ($this->scheduledAt === null) {
+            return null;
+        }
+
+        return new DateTimeImmutable($this->scheduledAt->format('Y-m-d H:i:s'), new DateTimeZone($this->timezoneName));
     }
 }

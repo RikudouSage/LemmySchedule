@@ -14,7 +14,7 @@
                     </tr>
                     <tr>
                         <td><strong>{{ "Scheduled at" | trans }}</strong></td>
-                        <td {{ stimulus_controller('local-date-time') }}>{{ job.scheduledAt | date('c') }}</td>
+                        <td {{ stimulus_controller('local-date-time') }}>{{ job.scheduledAtWithTimezone | date('c') }}</td>
                     </tr>
                     <tr>
                         <td><strong>{{ "Recurring post" | trans }}</strong></td>
@@ -62,11 +62,11 @@
                     </tr>
                     <tr>
                         <td><strong>{{ "Pin to community" | trans }}</strong></td>
-                        <td>{{ job.pinToCommunity ? 'Yes' | trans : 'No' | trans }}</td>
+                        <td>{{ job.shouldPinToCommunity ? 'Yes' | trans : 'No' | trans }}</td>
                     </tr>
                     <tr>
                         <td><strong>{{ "Pin to instance" | trans }}</strong></td>
-                        <td>{{ job.pinToInstance ? 'Yes' | trans : 'No' | trans }}</td>
+                        <td>{{ job.shouldPinToInstance ? 'Yes' | trans : 'No' | trans }}</td>
                     </tr>
                     <tr>
                         <td><strong>{{ "Unpin at" | trans }}</strong></td>

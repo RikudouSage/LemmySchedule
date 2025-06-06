@@ -40,7 +40,7 @@
                                 </a>
                             </td>
                             <td>{{ community(job.communityId) | community_name }}</td>
-                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
+                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAtWithTimezone | date('c') }}</td>
                             <td>{{ job.scheduleExpression ? 'Yes' | trans : "No" | trans }}</td>
                             <td>
                                 <button class="btn btn-danger"
@@ -106,7 +106,7 @@
                                     {{ "Unpin from instance" | trans }}
                                 {% endif %}
                             </td>
-                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
+                            <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAtWithTimezone | date('c') }}</td>
                             <td>
                                 <button class="btn btn-danger"
                                         type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
@@ -171,7 +171,7 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ job.scheduleExpression ? 'Yes' | trans : "No" | trans }}</td>
-                                <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAt | date('c') }}</td>
+                                <td {{ stimulus_target('scheduled-job', 'dateTime') }}>{{ job.scheduledAtWithTimezone | date('c') }}</td>
                                 <td>
                                     <button class="btn btn-danger"
                                             type="button" {{ stimulus_action('scheduled-job', 'cancel') }}>
