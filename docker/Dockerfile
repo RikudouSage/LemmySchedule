@@ -25,6 +25,7 @@ FROM php:8.4-apache
 ENV APP_ENV=prod
 ENV APP_CACHE_DIR=/opt/runtime-cache
 ENV LOCAL_FILE_UPLOADER_PATH=/opt/uploaded-files
+ENV APP_DB_DIR=/opt/database
 ENV MESSENGER_TRANSPORT_DSN=redis://redis:6379/lemmy_schedule_jobs
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
@@ -52,6 +53,7 @@ COPY docker/supervisor.conf /etc/supervisor/conf.d/messenger-worker.conf
 RUN mkdir /opt/runtime-cache && \
     mkdir /opt/logs && \
     mkdir /opt/uploaded-files && \
+    mkdir $APP_DB_DIR && \
     chown 33:33 /opt/* && \
     chmod +x /var/www/html/docker/entrypoint.bash
 
