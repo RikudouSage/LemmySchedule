@@ -38,7 +38,7 @@ final readonly class CountersRepository
         }
 
         return array_filter(array_map(
-            fn (string $name) => $this->findByName($name),
+            fn (string $name) => $this->findByName($name, $userId),
             array_unique($cacheItem->get()),
         ));
     }
@@ -65,7 +65,7 @@ final readonly class CountersRepository
 
         $listItem = $this->getListItem($userId);
         $list = $listItem->get() ?? [];
-        $list = $this->cleanupList($list);
+        $list = $this->cleanupList($list, $userId);
         $list[] = $counterConfiguration->name;
         $list = array_unique($list);
 
@@ -83,7 +83,7 @@ final readonly class CountersRepository
 
         $listItem = $this->getListItem($userId);
         $list = $listItem->get() ?? [];
-        $list = $this->cleanupList($list);
+        $list = $this->cleanupList($list, $userId);
         $listItem->set($list);
 
         $this->cache->save($listItem);
@@ -121,10 +121,10 @@ final readonly class CountersRepository
      *
      * @return array<string>
      */
-    private function cleanupList(array $list): array
+    private function cleanupList(array $list, string $userId): array
     {
         foreach ($list as $key => $item) {
-            if ($this->findByName($item) === null) {
+            if ($this->findByName($item, $userId) === null) {
                 unset($list[$key]);
             }
         }

@@ -7,6 +7,7 @@ use App\Exception\UserNotLoggedInException;
 use App\Lemmy\LemmyApiFactory;
 use JetBrains\PhpStorm\Deprecated;
 use Psr\Cache\CacheItemPoolInterface;
+use Rikudou\LemmyApi\Exception\LemmyApiException;
 use Rikudou\LemmyApi\Response\Model\Community;
 
 #[Deprecated]
@@ -50,10 +51,18 @@ final readonly class CommunityGroupManager
 
             yield new CommunityGroup(
                 name: $group['name'],
-                communities: array_map(
-                    static fn (int $id) => $api->community()->get($id)->community,
-                    $group['community_ids'],
-                ),
+                communities: array_filter(
+                    array_map(
+                        static function (int $id) use ($api) {
+                            try {
+                                return $api->community()->get($id)->community;
+                            } catch (LemmyApiException) {
+                                return null;
+                            }
+                        },
+                        $group['community_ids'],
+                    ),
+                )
             );
         }
     }

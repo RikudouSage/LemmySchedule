@@ -6,6 +6,7 @@ use App\Helper\DefaultIdEntityTrait;
 use App\Repository\CounterRepository;
 use Doctrine\ORM\Mapping as ORM;
 
+#[ORM\UniqueConstraint(fields: ['name', 'userId'])]
 #[ORM\Index(fields: ['userId'])]
 #[ORM\Entity(repositoryClass: CounterRepository::class)]
 class Counter

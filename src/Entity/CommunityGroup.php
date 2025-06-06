@@ -6,6 +6,7 @@ use App\Helper\DefaultIdEntityTrait;
 use App\Repository\CommunityGroupRepository;
 use Doctrine\ORM\Mapping as ORM;
 
+#[ORM\UniqueConstraint(fields: ['name', 'userId'])]
 #[ORM\Index(fields: ['userId'])]
 #[ORM\Entity(repositoryClass: CommunityGroupRepository::class)]
 class CommunityGroup

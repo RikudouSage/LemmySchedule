@@ -67,9 +67,16 @@ final readonly class DatabaseMigrator
     {
         /** @var array<string> $toDelete */
         $toDelete = [];
+        $repository = $this->entityManager->getrepository(CommunityGroup::class);
+
         foreach ($this->extractUserIds('@community_groups_(?<user>.+?)_(?<instance>.+)@') as $userId) {
             $groups = $this->groupManager->getGroupsForUser($userId);
             foreach ($groups as $group) {
+                if (in_array($group->name, $toDelete, true) || $repository->findOneBy(['name' => $group->name, 'userId' => $userId])) {
+                    $toDelete[] = $group->name;
+                    continue;
+                }
+
                 $entity = (new CommunityGroup())
                     ->setUserId($userId)
                     ->setName($group->name)
@@ -88,8 +95,10 @@ final readonly class DatabaseMigrator
 
     private function migrateCounters(): void
     {
-        /** @var array<string, array<CounterConfiguration>> $toDelete */
+        /** @var array<string, array<string>> $toDelete */
         $toDelete = [];
+        $repository = $this->entityManager->getrepository(Counter::class);
+
         foreach ($this->extractUserIds('@counter.(?<user>.+?)___(?<instance>.+)@') as $cacheKey => $userId) {
             $cacheItem = $this->cache->getItem($cacheKey);
             if ($cacheItem->isHit() && $cacheItem->get() instanceof CounterConfiguration) {
@@ -97,6 +106,12 @@ final readonly class DatabaseMigrator
             }
 
             foreach ($this->countersRepository->getCountersForUser($userId) as $counter) {
+                $toDelete[$userId] ??= [];
+                if (in_array($counter->name, $toDelete[$userId], true) || $repository->findOneBy(['name' => $counter->name, 'userId' => $userId])) {
+                    $toDelete[$userId][] = $counter->name;
+                    continue;
+                }
+
                 $entity = (new Counter())
                     ->setUserId($userId)
                     ->setName($counter->name)
@@ -105,8 +120,7 @@ final readonly class DatabaseMigrator
                 ;
                 $this->entityManager->persist($entity);
 
-                $toDelete[$userId] ??= [];
-                $toDelete[$userId][] = $counter;
+                $toDelete[$userId][] = $counter->name;
             }
         }
 
@@ -162,7 +176,9 @@ final readonly class DatabaseMigrator
                     $oldFile = $this->fileUploader->get($object->imageId);
                     $image = $this->fileUploader->upload($oldFile);
                     $this->entityManager->persist($image);
-                } catch (Exception) {
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                    error_log($e->getTraceAsString());
                     // ignore
                 }
             }

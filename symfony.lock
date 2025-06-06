@@ -14,6 +14,15 @@
     "bref/symfony-messenger": {
         "version": "0.5.4"
     },
+    "doctrine/deprecations": {
+        "version": "1.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "87424683adc81d7dc305eefec1fced883084aab9"
+        }
+    },
     "doctrine/doctrine-bundle": {
         "version": "2.14",
         "recipe": {
@@ -75,18 +84,6 @@
         },
         "files": [
             "config/packages/http_discovery.yaml"
-        ]
-    },
-    "rikudou/psr6-dynamo-db-bundle": {
-        "version": "4.0",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "main",
-            "version": "2.0",
-            "ref": "b8c90b14aff68e58377f293274db6e5a9855445a"
-        },
-        "files": [
-            "config/packages/prod/rikudou_dynamo_db_cache.yaml"
         ]
     },
     "symfony/apache-pack": {
