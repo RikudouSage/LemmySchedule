@@ -30,7 +30,7 @@ final readonly class PinUnpinPostJobV3Handler
 
         try {
             $api = $this->apiFactory->get($job->getInstance(), jwt: $job->getJwt());
-            switch ($job->pin) {
+            switch ($job->getPinType()) {
                 case PinType::PinToCommunity:
                     $api->post()->pin($job->getPostId(), PostFeatureType::Community);
                     break;
