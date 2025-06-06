@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.4-apache
 
 ENV APP_ENV prod
 ENV APP_CACHE_DIR=/opt/runtime-cache

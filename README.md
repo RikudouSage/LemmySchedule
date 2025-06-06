@@ -51,7 +51,7 @@ Here's a brief tutorial on how to build a production version of the app.
 
 ### Prerequisites
 
-- php (8.2, intl and json extensions), composer etc.
+- php (8.4, intl and json extensions), composer etc.
 - yarn (if you use a different node package manager, you can adapt the commands to it)
 
 ### Configuring
