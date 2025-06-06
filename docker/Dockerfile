@@ -29,4 +29,4 @@ RUN mkdir /opt/runtime-cache && \
     chown 33:33 /opt/* && \
     chmod +x /var/www/html/docker/entrypoint.bash
 
-ENTRYPOINT /var/www/html/docker/entrypoint.bash
+ENTRYPOINT exec /var/www/html/docker/entrypoint.bash
