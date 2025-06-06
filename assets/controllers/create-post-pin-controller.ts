@@ -35,6 +35,7 @@ export default class extends Controller {
         'pinInstanceRadio',
         'unpinInstanceRadio',
         'timezoneOffset',
+        'timezoneName',
     ];
     static values = {
         fetchPostUrl: String,
@@ -63,6 +64,7 @@ export default class extends Controller {
     private pinInstanceRadioTarget: HTMLInputElement;
     private unpinInstanceRadioTarget: HTMLInputElement;
     private timezoneOffsetTarget: HTMLInputElement;
+    private timezoneNameTarget: HTMLInputElement;
 
     private fetchPostUrlValue: string;
     private emptyInputErrorValue: string;
@@ -77,6 +79,7 @@ export default class extends Controller {
 
     public async connect() {
         this.timezoneOffsetTarget.value = DateHelper.getTimezoneOffset();
+        this.timezoneNameTarget.value = DateHelper.getTimezoneName();
     }
 
     public async loadPost(): Promise<void> {
