@@ -58,31 +58,31 @@ final readonly class ReportUnreadPostsJobV2Handler
                 return;
             }
 
-            $message = 'Here is a list of unread posts from ';
+            $messageText = 'Here is a list of unread posts from ';
             if ($job->getPersonId()) {
                 $person = $api->user()->get($job->getPersonId());
                 $personInstance = parse_url($person->actorId, PHP_URL_HOST);
                 $personUrl = "https://{$job->getInstance()}/u/{$person->name}@{$personInstance}";
 
-                $message .= "[@{$person->name}@{$personInstance}]({$personUrl})";
+                $messageText .= "[@{$person->name}@{$personInstance}]({$personUrl})";
             }
             if ($job->getPersonId() && $job->getCommunityId()) {
-                $message .= ' in ';
+                $messageText .= ' in ';
             }
             if ($job->getCommunityId()) {
                 $community = $api->community()->get($job->getCommunityId())->community;
 
                 $communityInstance = parse_url($community->actorId, PHP_URL_HOST);
                 $communityUrl = "https://{$job->getInstance()}/c/{$community->name}@{$communityInstance}";
-                $message .= "[!{$community->name}@{$communityInstance}]({$communityUrl})";
+                $messageText .= "[!{$community->name}@{$communityInstance}]({$communityUrl})";
             }
-            $message .= ":\n";
+            $messageText .= ":\n";
             foreach ($unread as $post) {
                 assert($post instanceof Post);
-                $message .= "- [{$post->name}](https://{$job->getInstance()}/post/{$post->id})\n";
+                $messageText .= "- [{$post->name}](https://{$job->getInstance()}/post/{$post->id})\n";
             }
 
-            $this->botApi->currentUser()->sendPrivateMessage(recipient: $recipient, content: $message);
+            $this->botApi->currentUser()->sendPrivateMessage(recipient: $recipient, content: $messageText);
         } finally {
             if (isset($recipient) && ($expression = $job->getScheduleExpression())) {
                 sleep(1);
