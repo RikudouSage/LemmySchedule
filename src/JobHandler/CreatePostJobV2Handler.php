@@ -17,6 +17,7 @@ use App\Service\CurrentUserService;
 use App\Service\JobScheduler;
 use App\Service\ScheduleExpressionParser;
 use App\Service\TitleExpressionReplacer;
+use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\ORM\EntityManagerInterface;
@@ -72,7 +73,7 @@ final readonly class CreatePostJobV2Handler
                 if ($fileProvider->isDefault()) {
                     $default = $fileProvider;
                 }
-                if ($fileProvider->getId() === $job->fileProvider && $fileProvider->isAvailable()) {
+                if ($fileProvider->getId() === $job->getFileProviderId() && $fileProvider->isAvailable()) {
                     $chosenFileProvider = $fileProvider;
                 }
             }

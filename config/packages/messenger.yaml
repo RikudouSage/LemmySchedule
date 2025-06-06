@@ -18,6 +18,10 @@ framework:
             App\Job\PinUnpinPostJobV2: async
             App\Job\ReportUnreadPostsJob: async
             App\Job\DeleteFileJob: async
+            App\Job\CreatePostJobV2: async
+            App\Job\DeleteFileJobV2: async
+            App\Job\PinUnpinPostJobV3: async
+            App\Job\ReportUnreadPostsJobV2: async
 
         buses:
             messenger.bus.default:
